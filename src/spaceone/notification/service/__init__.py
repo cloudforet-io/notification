@@ -1,0 +1,1 @@
+from spaceone.notification.service.protocol_service import ProtocolService

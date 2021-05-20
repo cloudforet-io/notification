@@ -1,0 +1,7 @@
+spaceone-core
+spaceone-api
+mongoengine
+langcodes
+redis
+fakeredis
+mongomock
