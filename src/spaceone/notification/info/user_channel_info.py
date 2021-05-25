@@ -9,15 +9,18 @@ __all__ = ['UserChannelInfo', 'UserChannelsInfo']
 
 
 def ScheduleInfo(schedule_info):
+
     info = {
         'day_of_week': schedule_info.day_of_week,
         'start_hour': schedule_info.start_hour,
         'end_hour': schedule_info.end_hour
     }
+
     return user_channel_pb2.UserChannelSchedule(**info)
 
 
 def UserChannelInfo(user_channel_vo: UserChannel, minimal=False):
+
     info = {
         'user_channel_id': user_channel_vo.user_channel_id,
         'name': user_channel_vo.name,
@@ -25,18 +28,24 @@ def UserChannelInfo(user_channel_vo: UserChannel, minimal=False):
     }
 
     if not minimal:
+
         info.update({
             'schema': user_channel_vo.schema,
             'data': change_struct_type(user_channel_vo.data),
             'secret_id': user_channel_vo.secret_id,
+            'is_subscribe': user_channel_vo.is_subscribe,
             'subscriptions': change_list_value_type(user_channel_vo.subscriptions),
-            'schedule': ScheduleInfo(user_channel_vo.schedule),
             'protocol_id': user_channel_vo.protocol_id,
             'user_id': user_channel_vo.user_id,
             'created_at': utils.datetime_to_iso8601(user_channel_vo.created_at),
             'tags': change_struct_type(utils.tags_to_dict(user_channel_vo.tags)),
             'domain_id': user_channel_vo.domain_id
         })
+
+        if user_channel_vo.schedule:
+            info.update({'schedule': ScheduleInfo(user_channel_vo.schedule)})
+        else:
+            info.update({'schedule': user_channel_vo.schedule})
 
     return user_channel_pb2.UserChannelInfo(**info)
 

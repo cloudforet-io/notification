@@ -1,1 +1,3 @@
 from spaceone.notification.service.protocol_service import ProtocolService
+from spaceone.notification.service.project_channel_service import ProjectChannelService
+from spaceone.notification.service.user_channel_service import UserChannelService

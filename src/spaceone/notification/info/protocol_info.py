@@ -29,12 +29,12 @@ def ProtocolInfo(protocol_vo: Protocol, minimal=False):
 
     if not minimal:
         info.update({
+            'capability': change_struct_type(protocol_vo.capability),
             'protocol_type': protocol_vo.protocol_type,
             'resource_type': protocol_vo.resource_type,
-            'capability': change_struct_type(protocol_vo.capability),
             'plugin_info': PluginInfo(protocol_vo.plugin_info),
             'created_at': utils.datetime_to_iso8601(protocol_vo.created_at),
-            'tags': change_struct_type(utils.tags_to_dict(protocol_vo.tags)),
+            'tags': change_struct_type(protocol_vo.tags),
             'domain_id': protocol_vo.domain_id
         })
 

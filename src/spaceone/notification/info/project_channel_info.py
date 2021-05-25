@@ -29,15 +29,20 @@ def ProjectChannelInfo(project_channel_vo: ProjectChannel, minimal=False):
             'schema': project_channel_vo.schema,
             'data': change_struct_type(project_channel_vo.data),
             'secret_id': project_channel_vo.secret_id,
+            'is_subscribe': project_channel_vo.is_subscribe,
             'subscriptions': change_list_value_type(project_channel_vo.subscriptions),
             'notification_level': project_channel_vo.notification_level,
-            'schedule': ScheduleInfo(project_channel_vo.schedule),
             'protocol_id': project_channel_vo.protocol_id,
             'project_id': project_channel_vo.project_id,
             'created_at': utils.datetime_to_iso8601(project_channel_vo.created_at),
-            'tags': change_struct_type(utils.tags_to_dict(project_channel_vo.tags)),
+            'tags': change_struct_type(project_channel_vo.tags),
             'domain_id': project_channel_vo.domain_id
         })
+
+        if project_channel_vo.schedule:
+            info.update({'schedule': ScheduleInfo(project_channel_vo.schedule)})
+        else:
+            info.update({'schedule': project_channel_vo.schedule})
 
     return project_channel_pb2.ProjectChannelInfo(**info)
 

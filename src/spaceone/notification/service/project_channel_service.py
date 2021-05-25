@@ -1,6 +1,10 @@
+from spaceone.core import utils
 from spaceone.core.service import *
-
+from spaceone.notification.error import *
+from spaceone.notification.manager import IdentityManager
+from spaceone.notification.manager import ProtocolManager
 from spaceone.notification.manager import ProjectChannelManager
+from spaceone.notification.manager import SecretManager
 from spaceone.notification.model import ProjectChannel
 
 
@@ -13,10 +17,14 @@ class ProjectChannelService(BaseService):
     def __init__(self, metadata):
         super().__init__(metadata)
         self.project_channel_mgr: ProjectChannelManager = self.locator.get_manager('ProjectChannelManager')
+        self.identity_mgr: IdentityManager = self.locator.get_manager('IdentityManager')
+        self.protocol_mgr: ProtocolManager = self.locator.get_manager('ProtocolManager')
+        self.secret_mgr: SecretManager = self.locator.get_manager('SecretManager')
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['protocol_id', 'name', 'schema', 'data', 'project_id', 'domain_id'])
     def create(self, params):
+
         """ Create Project Channel
 
         Args:
@@ -35,7 +43,41 @@ class ProjectChannelService(BaseService):
 
         Returns:
             project_channel_vo (object)
+
         """
+        protocol_id = params['protocol_id']
+        domain_id = params['domain_id']
+        data = params['data']
+        schema = params['schema']
+        project_id = params['project_id']
+        is_subscribe = params.get('is_subscribe')
+
+        if is_subscribe:
+            new_subscriptions = params.get('subscriptions', [])
+            params['subscriptions'] = new_subscriptions
+        else:
+            if 'is_subscribe' in params:
+                del params['is_subscribe']
+            if 'subscriptions' in params:
+                del params['subscriptions']
+
+        # Check project_id exists
+        self.identity_mgr.get_resource(project_id, 'identity.Project', domain_id)
+        protocol_vo = self.protocol_mgr.get_protocol(protocol_id, domain_id)
+        capability = protocol_vo.capability
+
+        if capability.get('data_type') == 'SECRET':
+            secret_name = utils.generate_id('project-channel', 4)
+            new_secret_parameters = {
+                "name": f'{secret_name}',
+                "secret_type": "CREDENTIALS",
+                "data": data,
+                "schema": schema,
+                "domain_id": domain_id
+            }
+
+            project_channel_secret = self.secret_mgr.create_secret(new_secret_parameters)
+            params['secret_id'] = project_channel_secret.get('secret_id')
 
         # Create Protocol
         project_channel_vo: ProjectChannel = self.project_channel_mgr.create_project_channel(params)
@@ -45,6 +87,7 @@ class ProjectChannelService(BaseService):
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['project_channel_id', 'domain_id'])
     def update(self, params):
+
         """ Update project channel
 
         Args:
@@ -52,7 +95,6 @@ class ProjectChannelService(BaseService):
                 'project_channel_id': 'str',
                 'name': 'str',
                 'data': 'dict',
-                'subscriptions': 'list',
                 'notification_level': 'str',
                 'schedule': 'dict',
                 'tags': 'dict',
@@ -62,6 +104,30 @@ class ProjectChannelService(BaseService):
         Returns:
             project_channel_vo (object)
         """
+
+        return self.project_channel_mgr.update_project_channel(params)
+
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
+    @check_required(['project_channel_id', 'domain_id'])
+    def set_subscription(self, params):
+        """ Update project channel
+
+        Args:
+            params (dict): {
+                'project_channel_id': 'str',
+                'is_subscribe': bool,
+                'is_subscribe': list,
+                'domain_id': 'str'
+            }
+
+        Returns:
+            project_channel_vo (object)
+        """
+        if params.get('is_subscribe') == False or 'is_subscribe' not in params:
+            params['is_subscribe'] = False
+            params['subscriptions'] = []
+        else:
+            params['subscriptions'] = params.get('subscriptions')
 
         return self.project_channel_mgr.update_project_channel(params)
 
@@ -180,6 +246,6 @@ class ProjectChannelService(BaseService):
             values (list): 'list of statistics data'
             total_count (int)
         """
-
         query = params.get('query', {})
         return self.project_channel_mgr.stat_project_channels(query)
+
