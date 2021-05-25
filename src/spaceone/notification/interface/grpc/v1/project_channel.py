@@ -19,6 +19,12 @@ class ProjectChannel(BaseAPI, project_channel_pb2_grpc.ProjectChannelServicer):
         with self.locator.get_service('ProjectChannelService', metadata) as project_channel_svc:
             return self.locator.get_info('ProjectChannelInfo', project_channel_svc.update(params))
 
+    def set_subscription(self, request, context):
+        params, metadata = self.parse_request(request, context)
+
+        with self.locator.get_service('ProjectChannelService', metadata) as project_channel_svc:
+            return self.locator.get_info('ProjectChannelInfo', project_channel_svc.set_subscription(params))
+
     def delete(self, request, context):
         params, metadata = self.parse_request(request, context)
 

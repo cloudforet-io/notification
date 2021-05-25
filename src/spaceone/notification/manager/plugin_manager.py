@@ -1,19 +1,18 @@
 import logging
 
 from spaceone.core.manager import BaseManager
-
-from spaceone.notification.error import *
-from spaceone.notification.manager.collector_manager.secret_manager import SecretManager
+from spaceone.notification.error.plugin import *
 
 __ALL__ = ['PluginManager']
 
 _LOGGER = logging.getLogger(__name__)
 
-
 """
 Base on plugin_info from collector_vo
 This class act for general interface with real collector plugin
 """
+
+
 class PluginManager(BaseManager):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -40,9 +39,9 @@ class PluginManager(BaseManager):
     def verify_by_plugin_info(self, plugin_info, domain_id, secret_id=None):
         self._check_plugin_info(plugin_info)
         plugin_id = plugin_info['plugin_id']
-        version   = plugin_info['version']
-        labels    = plugin_info.get('labels', {})
-        options   = plugin_info.get('options', {})
+        version = plugin_info['version']
+        labels = plugin_info.get('labels', {})
+        options = plugin_info.get('options', {})
 
         secret_id_list = self.get_secrets_from_plugin_info(plugin_info, domain_id, secret_id)
 
@@ -85,14 +84,14 @@ class PluginManager(BaseManager):
     def init_plugin(self, endpoint, options):
         """ Init plugin
         """
-        connector = self.locator.get_connector('CollectorPluginConnector')
+        connector = self.locator.get_connector('PluginConnector')
         connector.initialize(endpoint)
         return connector.init(options)
 
     def verify_plugin(self, endpoint, options, secret_data):
         """ Verify plugin
         """
-        connector = self.locator.get_connector('CollectorPluginConnector')
+        connector = self.locator.get_connector('PluginConnector')
         connector.initialize(endpoint)
         return connector.verify(options, secret_data)
 

@@ -12,19 +12,13 @@ class PluginInfo(EmbeddedDocument):
     # secret_id = StringField(max_length=40, null=True)
     # auto_upgrade = BooleanField(default=True)
 
-
-class Capability(EmbeddedDocument):
-    supported_schema = ListField(StringField)
-    data_type = StringField(max_length=40)
-
-
 class Protocol(MongoModel):
     protocol_id = StringField(max_length=40, generate_id='protocol', unique=True)
     name = StringField(max_length=255)
     state = StringField(max_length=20, default='ENABLED')
     protocol_type = StringField(max_length=40, default='EXTERNAL')
     resource_type = StringField(max_length=40, default='identity.User')
-    capability = EmbeddedDocumentField(Capability, default=None, null=True)
+    capability = DictField()
     plugin_info = EmbeddedDocumentField(PluginInfo, default=None, null=True)
     tags = DictField()
     domain_id = StringField(max_length=255)

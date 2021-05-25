@@ -2,7 +2,8 @@ from spaceone.core.service import *
 
 from spaceone.notification.manager import UserChannelManager
 from spaceone.notification.model import UserChannel
-
+from spaceone.notification.manager import ProtocolManager
+from spaceone.notification.manager import SecretManager
 
 @authentication_handler
 @authorization_handler
@@ -13,6 +14,8 @@ class UserChannelService(BaseService):
     def __init__(self, metadata):
         super().__init__(metadata)
         self.user_channel_mgr: UserChannelManager = self.locator.get_manager('UserChannelManager')
+        self.protocol_mgr: ProtocolManager = self.locator.get_manager('ProtocolManager')
+        self.secret_mgr: SecretManager = self.locator.get_manager('SecretManager')
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['protocol_id', 'name', 'schema', 'data', 'user_id', 'domain_id'])
@@ -37,6 +40,29 @@ class UserChannelService(BaseService):
         """
 
         # Create Protocol
+        protocol_id = params['protocol_id']
+        domain_id = params['domain_id']
+        data = params['data']
+        schema = params['schema']
+
+        protocol_vo = self.protocol_mgr.get_protocol(protocol_id, domain_id)
+        plugin_info = protocol_vo.plugin_info
+        capability = plugin_info.get('capability', {})
+
+        if capability['data_type'] == 'SECRET':
+            new_secret_parameters = {
+                "name": "Project Channel Notification",
+                "secret_type": "CREDENTIALS",
+                "data": data,
+                "schema": schema,
+                "domain_id": domain_id
+            }
+
+            project_channel_secret = self.secret_mgr.create_secret(new_secret_parameters)
+            params['secret_id'] = project_channel_secret.get('secret_id')
+
+        # Create Protocol
+
         user_channel_vo: UserChannel = self.user_channel_mgr.create_user_channel(params)
 
         return user_channel_vo
@@ -63,6 +89,29 @@ class UserChannelService(BaseService):
         """
 
         return self.user_channel_mgr.update_user_channel(params)
+
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
+    @check_required(['user_channel_id', 'is_subscribe', 'domain_id'])
+    def set_subscription(self, params):
+        """ Update project channel
+
+        Args:
+            params (dict): {
+                'user_channel_id': 'str',
+                'is_subscribe': bool,
+                'subscriptions': list,
+                'domain_id': 'str'
+            }
+
+        Returns:
+            project_channel_vo (object)
+        """
+
+        if not params['is_subscribe']:
+            params['subscriptions'] = []
+
+        return self.project_channel_mgr.update_project_channel(params)
+
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['user_channel_id', 'domain_id'])
