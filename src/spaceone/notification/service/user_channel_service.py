@@ -1,9 +1,11 @@
+from spaceone.core import utils
 from spaceone.core.service import *
-
+from spaceone.notification.manager import IdentityManager
 from spaceone.notification.manager import UserChannelManager
 from spaceone.notification.model import UserChannel
 from spaceone.notification.manager import ProtocolManager
 from spaceone.notification.manager import SecretManager
+
 
 @authentication_handler
 @authorization_handler
@@ -14,6 +16,7 @@ class UserChannelService(BaseService):
     def __init__(self, metadata):
         super().__init__(metadata)
         self.user_channel_mgr: UserChannelManager = self.locator.get_manager('UserChannelManager')
+        self.identity_mgr: IdentityManager = self.locator.get_manager('IdentityManager')
         self.protocol_mgr: ProtocolManager = self.locator.get_manager('ProtocolManager')
         self.secret_mgr: SecretManager = self.locator.get_manager('SecretManager')
 
@@ -39,19 +42,31 @@ class UserChannelService(BaseService):
             user_channel_vo (object)
         """
 
-        # Create Protocol
         protocol_id = params['protocol_id']
         domain_id = params['domain_id']
         data = params['data']
         schema = params['schema']
+        user_id = params['user_id']
+        is_subscribe = params.get('is_subscribe')
 
+        if is_subscribe:
+            new_subscriptions = params.get('subscriptions', [])
+            params['subscriptions'] = new_subscriptions
+        else:
+            if 'is_subscribe' in params:
+                del params['is_subscribe']
+            if 'subscriptions' in params:
+                del params['subscriptions']
+
+        # Check User id exists
+        self.identity_mgr.get_resource(user_id, 'identity.User', domain_id)
         protocol_vo = self.protocol_mgr.get_protocol(protocol_id, domain_id)
-        plugin_info = protocol_vo.plugin_info
-        capability = plugin_info.get('capability', {})
+        capability = protocol_vo.capability
 
-        if capability['data_type'] == 'SECRET':
+        if capability.get('data_type') == 'SECRET':
+            secret_name = utils.generate_id('user-channel', 4)
             new_secret_parameters = {
-                "name": "Project Channel Notification",
+                "name": f'{secret_name}',
                 "secret_type": "CREDENTIALS",
                 "data": data,
                 "schema": schema,
@@ -87,6 +102,12 @@ class UserChannelService(BaseService):
         Returns:
             user_channel_vo (object)
         """
+
+        if params.get('is_subscribe') == False or 'is_subscribe' not in params:
+            params['is_subscribe'] = False
+            params['subscriptions'] = []
+        else:
+            params['subscriptions'] = params.get('subscriptions')
 
         return self.user_channel_mgr.update_user_channel(params)
 
@@ -162,10 +183,10 @@ class UserChannelService(BaseService):
             user_channel_vo (object)
         """
 
-        return self.user_channel_mgr.disable_user_channel(params['project_channel_id'], params['domain_id'])
+        return self.user_channel_mgr.disable_user_channel(params['user_channel_id'], params['domain_id'])
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
-    @check_required(['user_channel_id_id', 'domain_id'])
+    @check_required(['user_channel_id', 'domain_id'])
     def get(self, params):
         """ Get User Channel
 
@@ -179,12 +200,11 @@ class UserChannelService(BaseService):
             user_channel_vo (object)
         """
 
-        return self.user_channel_mgr.get_user_channel(params['user_channel_id'], params['domain_id'],
-                                                      params.get('only'))
+        return self.user_channel_mgr.get_user_channel(params['user_channel_id'], params['domain_id'], params.get('only'))
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['domain_id'])
-    @append_query_filter(['user_channel_id_id', 'name', 'state', 'schema', 'secret_id', 'protocol_id', 'user_id', 'domain_id'])
+    @append_query_filter(['user_channel_id', 'name', 'state', 'schema', 'secret_id', 'protocol_id', 'user_id', 'domain_id'])
     @change_tag_filter('tags')
     @append_keyword_filter(['user_channel_id'])
     def list(self, params):
@@ -209,7 +229,7 @@ class UserChannelService(BaseService):
         """
 
         query = params.get('query', {})
-        return self.project_channel_mgr.list_project_channels(query)
+        return self.user_channel_mgr.list_user_channels(query)
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['query', 'domain_id'])

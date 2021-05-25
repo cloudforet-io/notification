@@ -7,7 +7,6 @@ from spaceone.notification.manager import ProjectChannelManager
 from spaceone.notification.manager import SecretManager
 from spaceone.notification.model import ProjectChannel
 
-SCHEDULE_DAYS = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']
 
 @authentication_handler
 @authorization_handler
@@ -46,7 +45,6 @@ class ProjectChannelService(BaseService):
             project_channel_vo (object)
 
         """
-
         protocol_id = params['protocol_id']
         domain_id = params['domain_id']
         data = params['data']
@@ -63,7 +61,8 @@ class ProjectChannelService(BaseService):
             if 'subscriptions' in params:
                 del params['subscriptions']
 
-        project = self.identity_mgr.get_resource(project_id, 'identity.Project', domain_id)
+        # Check project_id exists
+        self.identity_mgr.get_resource(project_id, 'identity.Project', domain_id)
         protocol_vo = self.protocol_mgr.get_protocol(protocol_id, domain_id)
         capability = protocol_vo.capability
 

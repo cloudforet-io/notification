@@ -39,6 +39,14 @@ class IdentityConnector(BaseConnector):
 
         return self._change_message(response)
 
+    def get_user(self, user_id, domain_id):
+        response = self.client.User.get({
+            'user_id': user_id,
+            'domain_id': domain_id
+        }, metadata=self.transaction.get_connection_meta())
+
+        return self._change_message(response)
+
     def get_service_account(self, service_account_id, domain_id):
         response = self.client.ServiceAccount.get({
             'service_account_id': service_account_id,

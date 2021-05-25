@@ -9,9 +9,9 @@ _LOGGER = logging.getLogger(__name__)
 
 _GET_RESOURCE_METHODS = {
     'identity.Project': 'get_project',
+    'identity.User': 'get_user',
     'identity.ServiceAccount': 'get_service_account',
 }
-
 
 class IdentityManager(BaseManager):
 
