@@ -41,7 +41,7 @@ GLOBAL:
   CONNECTORS:
     IdentityConnector:
       endpoint:
-        v1: grpc://notification:50051
+        v1: grpc://identity:50051
     SecretConnector:
       endpoint:
         v1: grpc://secret:50051
