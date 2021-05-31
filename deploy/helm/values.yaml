@@ -76,14 +76,19 @@ service:
               protocol: TCP
     rest:
       type: NodePort
-      annotations:
-        nil: nil
       ports:
         - name: rest
           port: 80
           targetPort: 80
           protocol: TCP
 
+# Ingress for REST
+ingress:
+    annotations:
+        kubernetes.io/ingress.class: alb
+        alb.ingress.kubernetes.io/scheme: internet-facing
+    servicePort: 80
+    path: /*
 
 ################################
 # volumeMount per deployment
