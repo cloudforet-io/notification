@@ -76,8 +76,6 @@ service:
               protocol: TCP
     rest:
       type: NodePort
-      annotations:
-        nil: nil
       ports:
         - name: rest
           port: 80
