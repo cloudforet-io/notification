@@ -6,7 +6,7 @@ developer: false
 grpc: true
 scheduler: false
 worker: false
-rest: false
+rest: true
 name: notification
 
 image:
