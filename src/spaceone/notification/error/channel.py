@@ -21,3 +21,6 @@ class ERROR_WRONG_SCHEDULE_HOURS_SETTINGS(ERROR_BASE):
 
 class ERROR_WRONG_SCHEDULE_DAY(ERROR_BASE):
     _message = "Invalid day to set schedule (day = {day})"
+
+class ERROR_INVALID_SUBSCRIPTIONS(ERROR_BASE):
+    _message = "Invalid subscriptions format, subscriptions must be list of string. (subscriptions = {subscriptions})"

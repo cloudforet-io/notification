@@ -50,16 +50,10 @@ class ProjectChannelService(BaseService):
         data = params['data']
         schema = params['schema']
         project_id = params['project_id']
-        is_subscribe = params.get('is_subscribe')
+        is_subscribe = params.get('is_subscribe', False)
 
-        if is_subscribe:
-            new_subscriptions = params.get('subscriptions', [])
-            params['subscriptions'] = new_subscriptions
-        else:
-            if 'is_subscribe' in params:
-                del params['is_subscribe']
-            if 'subscriptions' in params:
-                del params['subscriptions']
+        if not is_subscribe:
+            params['subscriptions'] = None
 
         # Check project_id exists
         self.identity_mgr.get_resource(project_id, 'identity.Project', domain_id)
@@ -123,11 +117,9 @@ class ProjectChannelService(BaseService):
         Returns:
             project_channel_vo (object)
         """
-        if params.get('is_subscribe') == False or 'is_subscribe' not in params:
-            params['is_subscribe'] = False
-            params['subscriptions'] = []
-        else:
-            params['subscriptions'] = params.get('subscriptions')
+        is_subscribe = params.get('is_subscribe', False)
+        if not is_subscribe:
+            params['subscriptions'] = None
 
         return self.project_channel_mgr.update_project_channel(params)
 
