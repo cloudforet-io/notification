@@ -47,16 +47,10 @@ class UserChannelService(BaseService):
         data = params['data']
         schema = params['schema']
         user_id = params['user_id']
-        is_subscribe = params.get('is_subscribe')
+        is_subscribe = params.get('is_subscribe', False)
 
-        if is_subscribe:
-            new_subscriptions = params.get('subscriptions', [])
-            params['subscriptions'] = new_subscriptions
-        else:
-            if 'is_subscribe' in params:
-                del params['is_subscribe']
-            if 'subscriptions' in params:
-                del params['subscriptions']
+        if not is_subscribe:
+            params['subscriptions'] = None
 
         # Check User id exists
         self.identity_mgr.get_resource(user_id, 'identity.User', domain_id)
@@ -128,8 +122,9 @@ class UserChannelService(BaseService):
             project_channel_vo (object)
         """
 
-        if not params['is_subscribe']:
-            params['subscriptions'] = []
+        is_subscribe = params.get('is_subscribe', False)
+        if not is_subscribe:
+            params['subscriptions'] = None
 
         return self.project_channel_mgr.update_project_channel(params)
 
