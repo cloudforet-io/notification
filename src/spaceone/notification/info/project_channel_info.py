@@ -41,14 +41,12 @@ def ProjectChannelInfo(project_channel_vo: ProjectChannel, minimal=False):
 
         if project_channel_vo.schedule:
             info.update({'schedule': ScheduleInfo(project_channel_vo.schedule)})
-        else:
-            info.update({'schedule': project_channel_vo.schedule})
+        elif project_channel_vo.schedule is None:
+            info.update({'schedule': {}})
 
     return project_channel_pb2.ProjectChannelInfo(**info)
 
 
 def ProjectChannelsInfo(project_channel_vos, total_count, **kwargs):
     results = list(map(functools.partial(ProjectChannelInfo, **kwargs), project_channel_vos))
-
     return project_channel_pb2.ProjectChannelsInfo(results=results, total_count=total_count)
-
