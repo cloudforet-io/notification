@@ -25,13 +25,12 @@ class NotificationManager(BaseManager):
 
         return notification_vo
 
-    def delete_notification(self, protocol_id, domain_id):
-        notification_vo: Notification = self.get_protocol(protocol_id, domain_id)
-        # TODO: Required to check existed channel using protocol
+    def delete_notification(self, notification_id, domain_id):
+        notification_vo: Notification = self.get_notification(notification_id, domain_id)
         notification_vo.delete()
 
-    def get_notification(self, protocol_id, domain_id, only=None):
-        return self.notification_model.get(protocol_id=protocol_id, domain_id=domain_id, only=only)
+    def get_notification(self, notification_id, domain_id, only=None):
+        return self.notification_model.get(notification_id=notification_id, domain_id=domain_id, only=only)
 
     def list_notifications(self, query={}):
         return self.notification_model.query(**query)

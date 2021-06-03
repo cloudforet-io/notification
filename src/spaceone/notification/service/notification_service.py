@@ -93,7 +93,7 @@ class NotificationService(BaseService):
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['domain_id'])
-    @append_query_filter(['notification_id', 'topic', 'notificaion_type', 'notificaion_level', 'parent_notificaion_id', 'project_id', 'user_id', 'domain_id'])
+    @append_query_filter(['notification_id', 'topic', 'notification_type', 'notification_level', 'parent_notification_id', 'project_id', 'user_id', 'domain_id'])
     @change_tag_filter('tags')
     @append_keyword_filter(['user_channel_id'])
     def list(self, params):
