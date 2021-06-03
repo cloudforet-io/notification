@@ -34,7 +34,7 @@ def ProjectChannelInfo(project_channel_vo: ProjectChannel, minimal=False):
             'notification_level': project_channel_vo.notification_level,
             'protocol_id': project_channel_vo.protocol_id,
             'project_id': project_channel_vo.project_id,
-            'schedule': ScheduleInfo(project_channel_vo.schedule if project_channel_vo.schedule else project_channel_vo.schedule),
+            'schedule': ScheduleInfo(project_channel_vo.schedule) if project_channel_vo.schedule else project_channel_vo.schedule,
             'created_at': utils.datetime_to_iso8601(project_channel_vo.created_at),
             'tags': change_struct_type(project_channel_vo.tags),
             'domain_id': project_channel_vo.domain_id
