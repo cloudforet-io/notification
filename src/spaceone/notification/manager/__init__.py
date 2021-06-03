@@ -5,3 +5,4 @@ from spaceone.notification.manager.repository_manager import RepositoryManager
 from spaceone.notification.manager.identity_manager import IdentityManager
 from spaceone.notification.manager.secret_manager import SecretManager
 from spaceone.notification.manager.plugin_manager import PluginManager
+from spaceone.notification.manager.notification_manager import NotificationManager

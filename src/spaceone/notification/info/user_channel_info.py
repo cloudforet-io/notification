@@ -20,7 +20,6 @@ def ScheduleInfo(schedule_info):
 
 
 def UserChannelInfo(user_channel_vo: UserChannel, minimal=False):
-
     info = {
         'user_channel_id': user_channel_vo.user_channel_id,
         'name': user_channel_vo.name,
@@ -28,7 +27,6 @@ def UserChannelInfo(user_channel_vo: UserChannel, minimal=False):
     }
 
     if not minimal:
-
         info.update({
             'schema': user_channel_vo.schema,
             'data': change_struct_type(user_channel_vo.data),
@@ -44,14 +42,12 @@ def UserChannelInfo(user_channel_vo: UserChannel, minimal=False):
 
         if user_channel_vo.schedule:
             info.update({'schedule': ScheduleInfo(user_channel_vo.schedule)})
-        else:
-            info.update({'schedule': user_channel_vo.schedule})
+        elif user_channel_vo.schedule is None:
+            info.update({'schedule': {}})
 
     return user_channel_pb2.UserChannelInfo(**info)
 
 
 def UserChannelsInfo(user_channel_vos, total_count, **kwargs):
     results = list(map(functools.partial(UserChannelInfo, **kwargs), user_channel_vos))
-
     return user_channel_pb2.UserChannelsInfo(results=results, total_count=total_count)
-

@@ -21,7 +21,7 @@ class ProjectChannelService(BaseService):
         self.protocol_mgr: ProtocolManager = self.locator.get_manager('ProtocolManager')
         self.secret_mgr: SecretManager = self.locator.get_manager('SecretManager')
 
-    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
+    @transaction(append_meta={'authorization.scope': 'PROJECT'})
     @check_required(['protocol_id', 'name', 'schema', 'data', 'project_id', 'domain_id'])
     def create(self, params):
 
@@ -78,7 +78,7 @@ class ProjectChannelService(BaseService):
 
         return project_channel_vo
 
-    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
+    @transaction(append_meta={'authorization.scope': 'PROJECT'})
     @check_required(['project_channel_id', 'domain_id'])
     def update(self, params):
 
@@ -101,7 +101,7 @@ class ProjectChannelService(BaseService):
 
         return self.project_channel_mgr.update_project_channel(params)
 
-    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
+    @transaction(append_meta={'authorization.scope': 'PROJECT'})
     @check_required(['project_channel_id', 'domain_id'])
     def set_subscription(self, params):
         """ Update project channel
@@ -118,12 +118,13 @@ class ProjectChannelService(BaseService):
             project_channel_vo (object)
         """
         is_subscribe = params.get('is_subscribe', False)
+
         if not is_subscribe:
             params['subscriptions'] = None
 
         return self.project_channel_mgr.update_project_channel(params)
 
-    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
+    @transaction(append_meta={'authorization.scope': 'PROJECT'})
     @check_required(['project_channel_id', 'domain_id'])
     def delete(self, params):
         """ Delete project channel
@@ -140,7 +141,7 @@ class ProjectChannelService(BaseService):
 
         self.project_channel_mgr.delete_project_channel(params['project_channel_id'], params['domain_id'])
 
-    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
+    @transaction(append_meta={'authorization.scope': 'PROJECT'})
     @check_required(['project_channel_id', 'domain_id'])
     def enable(self, params):
         """ Enable project channel
@@ -157,7 +158,7 @@ class ProjectChannelService(BaseService):
 
         return self.project_channel_mgr.enable_project_channel(params['project_channel_id'], params['domain_id'])
 
-    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
+    @transaction(append_meta={'authorization.scope': 'PROJECT'})
     @check_required(['project_channel_id', 'domain_id'])
     def disable(self, params):
         """ Disable project channel
@@ -174,7 +175,7 @@ class ProjectChannelService(BaseService):
 
         return self.project_channel_mgr.disable_project_channel(params['project_channel_id'], params['domain_id'])
 
-    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
+    @transaction(append_meta={'authorization.scope': 'PROJECT'})
     @check_required(['project_channel_id', 'domain_id'])
     def get(self, params):
         """ Get Project Channel
@@ -189,12 +190,16 @@ class ProjectChannelService(BaseService):
             project_channel_vo (object)
         """
 
-        return self.project_channel_mgr.get_project_channel(params['project_channel_id'], params['domain_id'],
+        return self.project_channel_mgr.get_project_channel(params['project_channel_id'],
+                                                            params['domain_id'],
                                                             params.get('only'))
 
-    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
+    @transaction(append_meta={
+        'authorization.scope': 'PROJECT',
+        'mutation.append_parameter': {'user_projects': 'authorization.projects'}
+    })
     @check_required(['domain_id'])
-    @append_query_filter(['project_channel_id', 'name', 'state', 'schema', 'secret_id', 'notification_level', 'protocol_id', 'project_id', 'domain_id'])
+    @append_query_filter(['project_channel_id', 'name', 'state', 'schema', 'secret_id', 'notification_level', 'protocol_id', 'project_id', 'user_projects', 'domain_id'])
     @change_tag_filter('tags')
     @append_keyword_filter(['project_channel_id'])
     def list(self, params):
@@ -222,9 +227,12 @@ class ProjectChannelService(BaseService):
         query = params.get('query', {})
         return self.project_channel_mgr.list_project_channels(query)
 
-    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
+    @transaction(append_meta={
+        'authorization.scope': 'PROJECT',
+        'mutation.append_parameter': {'user_projects': 'authorization.projects'}
+    })
     @check_required(['query', 'domain_id'])
-    @append_query_filter(['domain_id'])
+    @append_query_filter(['domain_id', 'user_projects'])
     @change_tag_filter('tags')
     @append_keyword_filter(['project_channel_id', 'name'])
     def stat(self, params):

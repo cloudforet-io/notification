@@ -38,6 +38,9 @@ class ProjectChannel(MongoModel):
             'schedule',
             'tags'
         ],
+        'change_query_keys': {
+            'user_projects': 'project_id'
+        },
         'minimal_fields': [
             'project_channel_id',
             'name',
