@@ -97,11 +97,11 @@ class UserChannelService(BaseService):
             user_channel_vo (object)
         """
 
-        if params.get('is_subscribe') == False or 'is_subscribe' not in params:
-            params['is_subscribe'] = False
-            params['subscriptions'] = []
-        else:
-            params['subscriptions'] = params.get('subscriptions')
+        # if params.get('is_subscribe') == False or 'is_subscribe' not in params:
+        #     params['is_subscribe'] = False
+        #     params['subscriptions'] = []
+        # else:
+        #     params['subscriptions'] = params.get('subscriptions')
 
         return self.user_channel_mgr.update_user_channel(params)
 
@@ -119,14 +119,14 @@ class UserChannelService(BaseService):
             }
 
         Returns:
-            project_channel_vo (object)
+            user_channel_vo (object)
         """
 
         is_subscribe = params.get('is_subscribe', False)
         if not is_subscribe:
             params['subscriptions'] = None
 
-        return self.project_channel_mgr.update_project_channel(params)
+        return self.user_channel_mgr.update_user_channel(params)
 
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})

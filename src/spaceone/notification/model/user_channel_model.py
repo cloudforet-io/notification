@@ -30,6 +30,8 @@ class UserChannel(MongoModel):
             'name',
             'state',
             'data',
+            'is_subscribe',
+            'subscriptions',
             'notification_level',
             'schedule',
             'tags'
