@@ -35,15 +35,11 @@ def UserChannelInfo(user_channel_vo: UserChannel, minimal=False):
             'subscriptions': change_list_value_type(user_channel_vo.subscriptions),
             'protocol_id': user_channel_vo.protocol_id,
             'user_id': user_channel_vo.user_id,
+            'schedule': ScheduleInfo(user_channel_vo.schedule) if user_channel_vo.schedule else user_channel_vo.schedule,
             'created_at': utils.datetime_to_iso8601(user_channel_vo.created_at),
             'tags': change_struct_type(utils.tags_to_dict(user_channel_vo.tags)),
             'domain_id': user_channel_vo.domain_id
         })
-
-        if user_channel_vo.schedule:
-            info.update({'schedule': ScheduleInfo(user_channel_vo.schedule)})
-        elif user_channel_vo.schedule is None:
-            info.update({'schedule': {}})
 
     return user_channel_pb2.UserChannelInfo(**info)
 
