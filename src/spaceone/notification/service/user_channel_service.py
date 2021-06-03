@@ -106,10 +106,10 @@ class UserChannelService(BaseService):
         return self.user_channel_mgr.update_user_channel(params)
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
-    @check_required(['user_channel_id', 'is_subscribe', 'domain_id'])
+    @check_required(['user_channel_id', 'domain_id'])
     def set_subscription(self, params):
-        """ Update project channel
-
+        """
+            set_subscription
         Args:
             params (dict): {
                 'user_channel_id': 'str',
@@ -123,6 +123,8 @@ class UserChannelService(BaseService):
         """
 
         is_subscribe = params.get('is_subscribe', False)
+        params['is_subscribe'] = is_subscribe
+
         if not is_subscribe:
             params['subscriptions'] = None
 

@@ -104,7 +104,7 @@ class ProjectChannelService(BaseService):
     @transaction(append_meta={'authorization.scope': 'PROJECT'})
     @check_required(['project_channel_id', 'domain_id'])
     def set_subscription(self, params):
-        """ Update project channel
+        """ set_subscription
 
         Args:
             params (dict): {
@@ -118,6 +118,7 @@ class ProjectChannelService(BaseService):
             project_channel_vo (object)
         """
         is_subscribe = params.get('is_subscribe', False)
+        params['is_subscribe'] = is_subscribe
 
         if not is_subscribe:
             params['subscriptions'] = None
