@@ -24,15 +24,17 @@ class UserChannelManager(BaseManager):
         return user_channel_vo
 
     def update_user_channel(self, params):
+        user_channel_vo = self.get_user_channel(params['user_channel_id'], params['domain_id'])
+        return self.update_user_channel_by_vo(params, user_channel_vo)
+
+    def update_user_channel_by_vo(self, params, user_channel_vo):
         def _rollback(old_data):
             _LOGGER.info(f'[user_user_channel._rollback] '
                          f'Revert Data : {old_data["name"]} '
                          f'({old_data["user_channel_id"]})')
             user_channel_vo.update(old_data)
 
-        user_channel_vo: UserChannel = self.get_user_channel(params['user_channel_id'], params['domain_id'])
         self.transaction.add_rollback(_rollback, user_channel_vo.to_dict())
-
         return user_channel_vo.update(params)
 
     def delete_user_channel(self, user_channel_id, domain_id):

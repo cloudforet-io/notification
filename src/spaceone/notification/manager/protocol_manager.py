@@ -2,7 +2,6 @@ import logging
 from spaceone.core.manager import BaseManager
 from spaceone.notification.model.protocol_model import Protocol
 from spaceone.notification.conf.protocol_conf import DEFAULT_PROTOCOLS
-from pprint import pprint
 from spaceone.notification.error import *
 
 _LOGGER = logging.getLogger(__name__)
@@ -20,7 +19,7 @@ class ProtocolManager(BaseManager):
                          f'Delete Protocol : {protocol_vo.name}'
                          f'({protocol_vo.protocol_id})')
             protocol_vo.delete()
-        pprint(params)
+
         protocol_vo: Protocol = self.protocol_model.create(params)
         self.transaction.add_rollback(_rollback, protocol_vo)
 
@@ -79,9 +78,9 @@ class ProtocolManager(BaseManager):
     def stat_protocols(self, query):
         return self.protocol_model.stat(**query)
 
-    def create_default_protocols(self, installed_protocols, domain_id):
-        for single_protocol in DEFAULT_PROTOCOLS:
-            if single_protocol['name'] not in installed_protocols:
-                _LOGGER.debug(f'Create default protocol: {single_protocol["name"]}')
-                single_protocol['domain_id'] = domain_id
-                self.create_protocol(single_protocol)
+    # def create_default_protocols(self, installed_protocols, domain_id):
+    #     for single_protocol in DEFAULT_PROTOCOLS:
+    #         if single_protocol['name'] not in installed_protocols:
+    #             _LOGGER.debug(f'Create default protocol: {single_protocol["name"]}')
+    #             single_protocol['domain_id'] = domain_id
+    #             self.create_protocol(single_protocol)

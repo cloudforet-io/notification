@@ -7,6 +7,7 @@ from spaceone.notification.manager import RepositoryManager
 from spaceone.notification.manager import ProtocolManager
 from spaceone.notification.manager import PluginManager
 from spaceone.notification.model import Protocol
+from spaceone.notification.conf.protocol_conf import DEFAULT_PROTOCOLS
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -82,17 +83,17 @@ class ProtocolService(BaseService):
 
         domain_id = params['domain_id']
         protocol_id = params['protocol_id']
-        selected_protocol_type_vo = self.protocol_mgr.get_protocol(protocol_id, domain_id, ['protocol_type'])
+        protocol_vo = self.protocol_mgr.get_protocol(protocol_id, domain_id)
 
-        if selected_protocol_type_vo.protocol_type == 'INTERNAL':
+        if protocol_vo.protocol_type == 'INTERNAL':
             raise ERROR_NOT_ALLOWED_UPDATE_PROTOCOL_TYPE(protocol_id=protocol_id)
 
-        return self.protocol_mgr.update_protocol(params)
+        return self.protocol_mgr.update_protocol_by_vo(params, protocol_vo)
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['protocol_id', 'domain_id'])
     def update_plugin(self, params):
-        """ Update protocol
+        """ Update protocol plugin
 
         Args:
             params (dict): {
@@ -312,6 +313,15 @@ class ProtocolService(BaseService):
     def _create_default_protocol(self, domain_id):
         query = {'domain_id': domain_id}
         protocol_vos, total_count = self.protocol_mgr.list_protocols(query)
-        installed_protocols = [protocol_vo.name for protocol_vo in protocol_vos]
-        self.protocol_mgr.create_default_protocols(installed_protocols, domain_id)
+        # installed_protocols = [protocol_vo.name for protocol_vo in protocol_vos]
+
+        installed_protocol_names = [protocol_vo.name for protocol_vo in protocol_vos]
+
+        for default_protocol in DEFAULT_PROTOCOLS:
+            if default_protocol['name'] not in installed_protocol_names:
+                _LOGGER.debug(f'Create default protocol: {default_protocol["name"]}')
+                default_protocol['domain_id'] = domain_id
+                self.protocol_mgr.create_protocol(default_protocol)
+
+        # self.protocol_mgr.create_default_protocols(installed_protocols, domain_id)
         return True

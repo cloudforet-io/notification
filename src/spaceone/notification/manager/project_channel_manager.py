@@ -24,14 +24,16 @@ class ProjectChannelManager(BaseManager):
         return project_channel_vo
 
     def update_project_channel(self, params):
+        project_channel_vo = self.get_project_channel(params['project_channel_id'], params['domain_id'])
+        return self.update_project_channel_by_vo(params, project_channel_vo)
+
+    def update_project_channel_by_vo(self, params, project_channel_vo):
         def _rollback(old_data):
-            _LOGGER.info(f'[update_project_channel._rollback] Revert Data : {old_data["name"]} ({old_data["project_channel_id"]})')
+            _LOGGER.info(f'[update_project_channel._rollback] Revert Data : {old_data["name"]} '
+                         f'({old_data["project_channel_id"]})')
             project_channel_vo.update(old_data)
 
-        project_channel_vo: ProjectChannel = self.get_project_channel(params['project_channel_id'], params['domain_id'])
-
         self.transaction.add_rollback(_rollback, project_channel_vo.to_dict())
-
         return project_channel_vo.update(params)
 
     def delete_project_channel(self, project_channel_id, domain_id):

@@ -32,6 +32,7 @@ class UserChannelService(BaseService):
                 'schema': 'str',
                 'data': 'dict',
                 'subscriptions': 'list',
+                'is_subscribe': 'bool',
                 'schedule': 'dict',
                 'user_id': 'str',
                 'tags': 'dict',
@@ -50,7 +51,7 @@ class UserChannelService(BaseService):
         is_subscribe = params.get('is_subscribe', False)
 
         if not is_subscribe:
-            params['subscriptions'] = None
+            params['subscriptions'] = []
 
         # Check User id exists
         self.identity_mgr.get_resource(user_id, 'identity.User', domain_id)
@@ -107,6 +108,32 @@ class UserChannelService(BaseService):
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['user_channel_id', 'domain_id'])
+    def set_schedule(self, params):
+        """
+            set_schedule
+        Args:
+            params (dict): {
+                'user_channel_id': 'str',
+                'is_scheduled': bool,
+                'schedule': dict,
+                'domain_id': 'str'
+            }
+
+        Returns:
+            user_channel_vo (object)
+        """
+        user_channel_vo = self.user_channel_mgr.get_user_channel(params['user_channel_id'], params['domain_id'])
+
+        if not params.get('is_scheduled', False):
+            params.update({
+                'is_scheduled': False,
+                'schedule': {}
+            })
+
+        return self.user_channel_mgr.update_user_channel_by_vo(params, user_channel_vo)
+
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
+    @check_required(['user_channel_id', 'domain_id'])
     def set_subscription(self, params):
         """
             set_subscription
@@ -121,15 +148,13 @@ class UserChannelService(BaseService):
         Returns:
             user_channel_vo (object)
         """
-
-        is_subscribe = params.get('is_subscribe', False)
-        params['is_subscribe'] = is_subscribe
-
-        if not is_subscribe:
-            params['subscriptions'] = None
+        if not params.get('is_subscribe', False):
+            params.update({
+                'is_subscribe': False,
+                'subscriptions': []
+            })
 
         return self.user_channel_mgr.update_user_channel(params)
-
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['user_channel_id', 'domain_id'])

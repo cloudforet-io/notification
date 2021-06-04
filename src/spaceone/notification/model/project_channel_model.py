@@ -1,6 +1,4 @@
 from mongoengine import *
-from datetime import datetime
-from spaceone.core.error import *
 from spaceone.core.model.mongo_model import MongoModel
 
 
@@ -19,9 +17,10 @@ class ProjectChannel(MongoModel):
     schema = StringField(max_length=40)
     data = DictField()
     is_subscribe = BooleanField(default=False)
-    subscriptions = ListField(StringField(max_length=255))
+    subscriptions = ListField(StringField(max_length=255), default=[])
     notification_level = StringField(default='ALL', max_length=40)
-    schedule = EmbeddedDocumentField(Schedule, default=None, null=True)
+    is_scheduled = BooleanField(default=False)
+    schedule = EmbeddedDocumentField(Schedule, default={})
     tags = DictField()
     secret_id = StringField(max_length=255)
     domain_id = StringField(max_length=255)
@@ -35,6 +34,7 @@ class ProjectChannel(MongoModel):
             'is_subscribe',
             'subscriptions',
             'notification_level',
+            'is_scheduled',
             'schedule',
             'tags'
         ],

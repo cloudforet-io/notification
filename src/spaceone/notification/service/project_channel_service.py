@@ -34,6 +34,7 @@ class ProjectChannelService(BaseService):
                 'schema': 'str',
                 'data': 'dict',
                 'subscriptions': 'list',
+                'is_subscribe': 'bool',
                 'notification_level': 'str',
                 'schedule': 'dict',
                 'project_id': 'str',
@@ -53,7 +54,7 @@ class ProjectChannelService(BaseService):
         is_subscribe = params.get('is_subscribe', False)
 
         if not is_subscribe:
-            params['subscriptions'] = None
+            params['subscriptions'] = []
 
         # Check project_id exists
         self.identity_mgr.get_resource(project_id, 'identity.Project', domain_id)
@@ -103,6 +104,33 @@ class ProjectChannelService(BaseService):
 
     @transaction(append_meta={'authorization.scope': 'PROJECT'})
     @check_required(['project_channel_id', 'domain_id'])
+    def set_schedule(self, params):
+        """ set_schedule
+
+        Args:
+            params (dict): {
+                'project_channel_id': 'str',
+                'is_scheduled': bool,
+                'schedule': dict,
+                'domain_id': 'str'
+            }
+
+        Returns:
+            project_channel_vo (object)
+        """
+        project_channel_vo = self.project_channel_mgr.get_project_channel(params['project_channel_id'],
+                                                                          params['domain_id'])
+
+        if not params.get('is_scheduled', False):
+            params.update({
+                'is_scheduled': False,
+                'schedule': {}
+            })
+
+        return self.project_channel_mgr.update_project_channel_by_vo(params, project_channel_vo)
+
+    @transaction(append_meta={'authorization.scope': 'PROJECT'})
+    @check_required(['project_channel_id', 'domain_id'])
     def set_subscription(self, params):
         """ set_subscription
 
@@ -110,18 +138,18 @@ class ProjectChannelService(BaseService):
             params (dict): {
                 'project_channel_id': 'str',
                 'is_subscribe': bool,
-                'is_subscribe': list,
+                'subscriptions': list,
                 'domain_id': 'str'
             }
 
         Returns:
             project_channel_vo (object)
         """
-        is_subscribe = params.get('is_subscribe', False)
-        params['is_subscribe'] = is_subscribe
-
-        if not is_subscribe:
-            params['subscriptions'] = None
+        if not params.get('is_subscribe', False):
+            params.update({
+                'is_subscribe': False,
+                'subscriptions': []
+            })
 
         return self.project_channel_mgr.update_project_channel(params)
 

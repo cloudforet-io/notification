@@ -19,6 +19,12 @@ class UserChannel(BaseAPI, user_channel_pb2_grpc.UserChannelServicer):
         with self.locator.get_service('UserChannelService', metadata) as user_channel_svc:
             return self.locator.get_info('UserChannelInfo', user_channel_svc.update(params))
 
+    def set_schedule(self, request, context):
+        params, metadata = self.parse_request(request, context)
+
+        with self.locator.get_service('UserChannelService', metadata) as user_channel_svc:
+            return self.locator.get_info('UserChannelInfo', user_channel_svc.set_schedule(params))
+
     def set_subscription(self, request, context):
         params, metadata = self.parse_request(request, context)
 
