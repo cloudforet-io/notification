@@ -24,7 +24,7 @@ class TestProtocolService(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        config.init_conf(package='spaceone.notificaiton')
+        config.init_conf(package='spaceone.notification')
         connect('test', host='mongomock://localhost')
 
         cls.domain_id = utils.generate_id('domain')
@@ -57,17 +57,15 @@ class TestProtocolService(unittest.TestCase):
     @patch.object(RepositoryConnector, 'get_plugin')
     @patch.object(SecretConnector, 'list_secrets')
     @patch.object(NotificationPluginConnector, 'init')
-    def test_register_metric_data_source_with_secret_id(self, mock_plugin_verify, mock_list_secrets,
-                                                        mock_get_plugin, *args):
+    def test_create_protocol(self, mock_plugin_verify, mock_list_secrets, mock_get_plugin, *args):
         secret_id = utils.generate_id('secret')
         plugin_id = utils.generate_id('plugin')
         plugin_version = '1.0'
 
         mock_plugin_verify.return_value = {
             'metadata': {
-                'supported_resource_type': ['inventory.Server', 'inventory.CloudService'],
-                'supported_stat': ['AVERAGE', 'MAX', 'MIN'],
-                'required_keys': ['reference.resource_id']
+                'supported_schema': ['slack_webhook', 'spaceone_user'],
+                'data_type': 'PLAIN_TEXT'
             }
         }
 
@@ -80,20 +78,25 @@ class TestProtocolService(unittest.TestCase):
         }
 
         mock_get_plugin.return_value = {
+            'name': 'notification-slack-protocol',
+            'service_type': 'notification.Protocol',
+            'image': 'pyengine/notification-slack-protocol',
             'capability': {
-                'supported_schema': ['aws_access_key', 'aws_assume_role'],
-                'monitoring_type': 'METRIC'
+                'supported_schema': ['slack_webhook', 'spaceone_user'],
+                'data_type': 'PLAIN_TEXT'
             },
-            'provider': 'aws'
+            'tags': {
+                'description': 'Notification Slack Protocol',
+                'spaceone:plugin_name': 'notification-slack-protocol'
+            }
         }
 
         params = {
-            'name': 'AWS CloudWatch',
+            'name': 'Slack Notification',
             'plugin_info': {
                 'plugin_id': plugin_id,
                 'version': plugin_version,
                 'options': {},
-                'secret_id': secret_id
             },
             'tags': {
                 utils.random_string(): utils.random_string()
@@ -101,18 +104,19 @@ class TestProtocolService(unittest.TestCase):
             'domain_id': self.domain_id
         }
 
-        self.transaction.method = 'register'
-        data_source_svc = DataSourceService(transaction=self.transaction)
-        data_source_vo = data_source_svc.register(params.copy())
+        self.transaction.method = 'create'
+        protocol_svc = ProtocolService(transaction=self.transaction)
+        protocol_vo = protocol_svc.create(params.copy())
 
-        print_data(data_source_vo.to_dict(), 'test_register_metric_data_source_with_secret_id')
-        DataSourceInfo(data_source_vo)
+        print_data(protocol_vo.to_dict(), 'test_create_protocol')
+        ProtocolInfo(protocol_vo)
 
-        self.assertIsInstance(data_source_vo, DataSource)
-        self.assertEqual(params['name'], data_source_vo.name)
-        self.assertEqual(params['tags'], utils.tags_to_dict(data_source_vo.tags))
-        self.assertEqual(params['domain_id'], data_source_vo.domain_id)
+        self.assertIsInstance(protocol_vo, Protocol)
+        self.assertEqual(params['name'], protocol_vo.name)
+        self.assertEqual(params['tags'], protocol_vo.tags)
+        self.assertEqual(params['domain_id'], protocol_vo.domain_id)
 
+    '''
     @patch.object(MongoModel, 'connect', return_value=None)
     @patch.object(RepositoryConnector, '__init__', return_value=None)
     @patch.object(SecretConnector, '__init__', return_value=None)
@@ -442,6 +446,7 @@ class TestProtocolService(unittest.TestCase):
 
         print_data(values, 'test_stat_data_source_distinct')
 
+    '''
 
 if __name__ == "__main__":
     unittest.main(testRunner=RichTestRunner)
