@@ -1,10 +1,12 @@
 from spaceone.core import utils
 from spaceone.core.service import *
+from spaceone.notification.error import *
 from spaceone.notification.manager import IdentityManager
 from spaceone.notification.manager import UserChannelManager
 from spaceone.notification.model import UserChannel
 from spaceone.notification.manager import ProtocolManager
 from spaceone.notification.manager import SecretManager
+from spaceone.notification.model.protocol_model import Protocol
 
 
 @authentication_handler
@@ -13,8 +15,8 @@ from spaceone.notification.manager import SecretManager
 @event_handler
 class UserChannelService(BaseService):
 
-    def __init__(self, metadata):
-        super().__init__(metadata)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.user_channel_mgr: UserChannelManager = self.locator.get_manager('UserChannelManager')
         self.identity_mgr: IdentityManager = self.locator.get_manager('IdentityManager')
         self.protocol_mgr: ProtocolManager = self.locator.get_manager('ProtocolManager')
@@ -31,8 +33,9 @@ class UserChannelService(BaseService):
                 'name': 'str',
                 'schema': 'str',
                 'data': 'dict',
-                'subscriptions': 'list',
                 'is_subscribe': 'bool',
+                'subscriptions': 'list',
+                'is_scheduled': 'bool',
                 'schedule': 'dict',
                 'user_id': 'str',
                 'tags': 'dict',
@@ -49,31 +52,51 @@ class UserChannelService(BaseService):
         schema = params['schema']
         user_id = params['user_id']
         is_subscribe = params.get('is_subscribe', False)
+        is_scheduled = params.get('is_scheduled', False)
 
         if not is_subscribe:
             params['subscriptions'] = []
 
-        # Check User id exists
+        if is_scheduled:
+            self.validate_schedule(params.get('schedule', {}))
+        else:
+            params['schedule'] = None
+
         self.identity_mgr.get_resource(user_id, 'identity.User', domain_id)
-        protocol_vo = self.protocol_mgr.get_protocol(protocol_id, domain_id)
+        protocol_vo: Protocol = self.protocol_mgr.get_protocol(protocol_id, domain_id)
+
+        if protocol_vo.state == 'DISABLED':
+            raise ERROR_PROTOCOL_DISABLED()
+
+        if protocol_vo.protocol_type == 'INTERNAL':
+            raise ERROR_PROTOCOL_INTERNVAL()
+
         capability = protocol_vo.capability
 
         if capability.get('data_type') == 'SECRET':
-            secret_name = utils.generate_id('user-channel', 4)
             new_secret_parameters = {
-                "name": f'{secret_name}',
-                "secret_type": "CREDENTIALS",
-                "data": data,
-                "schema": schema,
-                "domain_id": domain_id
+                'name': utils.generate_id('secret-user-ch-tmp', 4),
+                'secret_type': 'CREDENTIALS',
+                'data': data,
+                'schema': schema,
+                'domain_id': domain_id
             }
 
             project_channel_secret = self.secret_mgr.create_secret(new_secret_parameters)
-            params['secret_id'] = project_channel_secret.get('secret_id')
 
-        # Create Protocol
+            params.update({
+                'secret_id': project_channel_secret['secret_id'],
+                'data': {}
+            })
 
         user_channel_vo: UserChannel = self.user_channel_mgr.create_user_channel(params)
+
+        if user_channel_vo.secret_id:
+            self.secret_mgr.update_secret({
+                'secret_id': user_channel_vo.secret_id,
+                'name': user_channel_vo.user_channel_id,
+                'domain_id': domain_id
+            })
 
         return user_channel_vo
 
@@ -87,9 +110,6 @@ class UserChannelService(BaseService):
                 'user_channel_id': 'str',
                 'name': 'str',
                 'data': 'dict',
-                'subscriptions': 'list',
-                'notification_level': 'str',
-                'schedule': 'dict',
                 'tags': 'dict',
                 'domain_id': 'str'
             }
@@ -98,13 +118,22 @@ class UserChannelService(BaseService):
             user_channel_vo (object)
         """
 
-        # if params.get('is_subscribe') == False or 'is_subscribe' not in params:
-        #     params['is_subscribe'] = False
-        #     params['subscriptions'] = []
-        # else:
-        #     params['subscriptions'] = params.get('subscriptions')
+        user_channel_id = params['user_channel_id']
+        domain_id = params['domain_id']
 
-        return self.user_channel_mgr.update_user_channel(params)
+        user_channel_vo: UserChannel = self.user_channel_mgr.get_user_channel(user_channel_id, domain_id)
+
+        if 'data' in params and user_channel_vo.secret_id:
+            secret_params = {
+                'secret_id': user_channel_vo.secret_id,
+                'data': params['data'],
+                'domain_id': domain_id
+            }
+
+            self.secret_mgr.update_secret_data(secret_params)
+            params['data'] = {}
+
+        return self.user_channel_mgr.update_user_channel_by_vo(params, user_channel_vo)
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['user_channel_id', 'domain_id'])
@@ -122,12 +151,17 @@ class UserChannelService(BaseService):
         Returns:
             user_channel_vo (object)
         """
-        user_channel_vo = self.user_channel_mgr.get_user_channel(params['user_channel_id'], params['domain_id'])
 
-        if not params.get('is_scheduled', False):
+        user_channel_vo = self.user_channel_mgr.get_user_channel(params['project_channel_id'], params['domain_id'])
+
+        is_scheduled = params.get('is_scheduled', False)
+
+        if is_scheduled:
+            self.validate_schedule(params.get('schedule', {}))
+        else:
             params.update({
                 'is_scheduled': False,
-                'schedule': {}
+                'schedule': None
             })
 
         return self.user_channel_mgr.update_user_channel_by_vo(params, user_channel_vo)
@@ -170,8 +204,15 @@ class UserChannelService(BaseService):
         Returns:
             None
         """
+        user_channel_id = params['user_channel_id']
+        domain_id = params['domain_id']
 
-        self.user_channel_mgr.delete_user_channel(params['user_channel_id'], params['domain_id'])
+        user_channel_vo = self.user_channel_mgr.get_user_channel(user_channel_id, domain_id)
+
+        if secret_id := user_channel_vo.secret_id:
+            self.secret_mgr.delete_secret({'secret_id': secret_id, 'domain_id': domain_id})
+
+        self.user_channel_mgr.delete_user_channel_by_vo(user_channel_vo)
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['user_channel_id', 'domain_id'])
@@ -272,3 +313,17 @@ class UserChannelService(BaseService):
 
         query = params.get('query', {})
         return self.user_channel_mgr.stat_user_channels(query)
+
+    @staticmethod
+    def validate_schedule(schedule):
+        if 'day_of_week' not in schedule:
+            raise ERROR_REQUIRED_PARAMETER(key='schedule.day_of_week')
+
+        if 'start_hour' not in schedule:
+            schedule.update({'start_hour': 0})
+
+        if 'end_hour' not in schedule:
+            schedule.update({'end_hour': 0})
+
+        if schedule['start_hour'] > schedule['end_hour']:
+            raise ERROR_WRONG_SCHEDULE_HOURS_SETTINGS(start_hour=schedule['start_hour'], end_hour=schedule['end_hour'])
