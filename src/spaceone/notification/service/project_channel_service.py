@@ -14,8 +14,8 @@ from spaceone.notification.model import ProjectChannel
 @event_handler
 class ProjectChannelService(BaseService):
 
-    def __init__(self, metadata):
-        super().__init__(metadata)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.project_channel_mgr: ProjectChannelManager = self.locator.get_manager('ProjectChannelManager')
         self.identity_mgr: IdentityManager = self.locator.get_manager('IdentityManager')
         self.protocol_mgr: ProtocolManager = self.locator.get_manager('ProtocolManager')
@@ -33,9 +33,10 @@ class ProjectChannelService(BaseService):
                 'name': 'str',
                 'schema': 'str',
                 'data': 'dict',
-                'subscriptions': 'list',
                 'is_subscribe': 'bool',
+                'subscriptions': 'list',
                 'notification_level': 'str',
+                'is_scheduled': 'bool',
                 'schedule': 'dict',
                 'project_id': 'str',
                 'tags': 'dict',
@@ -52,37 +53,60 @@ class ProjectChannelService(BaseService):
         schema = params['schema']
         project_id = params['project_id']
         is_subscribe = params.get('is_subscribe', False)
+        is_scheduled = params.get('is_scheduled', False)
 
         if not is_subscribe:
             params['subscriptions'] = []
 
-        # Check project_id exists
+        if is_scheduled:
+            self.validate_schedule(params.get('schedule', {}))
+        else:
+            params['schedule'] = None
+
         self.identity_mgr.get_resource(project_id, 'identity.Project', domain_id)
         protocol_vo = self.protocol_mgr.get_protocol(protocol_id, domain_id)
+
+        if protocol_vo.state == 'DISABLED':
+            raise ERROR_PROTOCOL_DISABLED()
+
         capability = protocol_vo.capability
 
+        if schema not in capability.get('supported_schema', []):
+            raise ERROR_NOT_SUPPORT_SCHEMA(schema=schema)
+
         if capability.get('data_type') == 'SECRET':
-            secret_name = utils.generate_id('project-channel', 4)
             new_secret_parameters = {
-                "name": f'{secret_name}',
-                "secret_type": "CREDENTIALS",
-                "data": data,
-                "schema": schema,
-                "domain_id": domain_id
+                'name': 'project-channel-secret',
+                'secret_type': 'CREDENTIALS',
+                'data': data,
+                'schema': schema,
+                'project_id': project_id,
+                'domain_id': domain_id
             }
 
             project_channel_secret = self.secret_mgr.create_secret(new_secret_parameters)
-            params['secret_id'] = project_channel_secret.get('secret_id')
 
-        # Create Protocol
+            params.update({
+                'secret_id': project_channel_secret['secret_id'],
+                'data': {}
+            })
+
+        # Create Project Channel
         project_channel_vo: ProjectChannel = self.project_channel_mgr.create_project_channel(params)
+
+        if project_channel_vo.secret_id:
+            self.secret_mgr.update_secret({
+                'secret_id': project_channel_vo.secret_id,
+                'name': project_channel_vo.project_channel_id,
+                'project_id': project_id,
+                'domain_id': domain_id
+            })
 
         return project_channel_vo
 
     @transaction(append_meta={'authorization.scope': 'PROJECT'})
     @check_required(['project_channel_id', 'domain_id'])
     def update(self, params):
-
         """ Update project channel
 
         Args:
@@ -91,7 +115,6 @@ class ProjectChannelService(BaseService):
                 'name': 'str',
                 'data': 'dict',
                 'notification_level': 'str',
-                'schedule': 'dict',
                 'tags': 'dict',
                 'domain_id': 'str'
             }
@@ -99,13 +122,27 @@ class ProjectChannelService(BaseService):
         Returns:
             project_channel_vo (object)
         """
+        project_channel_id = params['project_channel_id']
+        domain_id = params['domain_id']
 
-        return self.project_channel_mgr.update_project_channel(params)
+        project_channel_vo: ProjectChannel = self.project_channel_mgr.get_project_channel(project_channel_id, domain_id)
+
+        if 'data' in params and project_channel_vo.secret_id:
+            secret_params = {
+                'secret_id': project_channel_vo.secret_id,
+                'data': params['data'],
+                'domain_id': domain_id
+            }
+
+            self.secret_mgr.update_secret_data(secret_params)
+            params['data'] = {}
+
+        return self.project_channel_mgr.update_project_channel_by_vo(params, project_channel_vo)
 
     @transaction(append_meta={'authorization.scope': 'PROJECT'})
     @check_required(['project_channel_id', 'domain_id'])
     def set_schedule(self, params):
-        """ set_schedule
+        """ Set schedule for Project Channel
 
         Args:
             params (dict): {
@@ -121,10 +158,14 @@ class ProjectChannelService(BaseService):
         project_channel_vo = self.project_channel_mgr.get_project_channel(params['project_channel_id'],
                                                                           params['domain_id'])
 
-        if not params.get('is_scheduled', False):
+        is_scheduled = params.get('is_scheduled', False)
+
+        if is_scheduled:
+            self.validate_schedule(params.get('schedule', {}))
+        else:
             params.update({
                 'is_scheduled': False,
-                'schedule': {}
+                'schedule': None
             })
 
         return self.project_channel_mgr.update_project_channel_by_vo(params, project_channel_vo)
@@ -132,7 +173,7 @@ class ProjectChannelService(BaseService):
     @transaction(append_meta={'authorization.scope': 'PROJECT'})
     @check_required(['project_channel_id', 'domain_id'])
     def set_subscription(self, params):
-        """ set_subscription
+        """ Set subscriptions for Project Channel
 
         Args:
             params (dict): {
@@ -167,8 +208,15 @@ class ProjectChannelService(BaseService):
         Returns:
             None
         """
+        project_channel_id = params['project_channel_id']
+        domain_id = params['domain_id']
 
-        self.project_channel_mgr.delete_project_channel(params['project_channel_id'], params['domain_id'])
+        project_channel_vo = self.project_channel_mgr.get_project_channel(project_channel_id, domain_id)
+
+        if secret_id := project_channel_vo.secret_id:
+            self.secret_mgr.delete_secret({'secret_id': secret_id, 'domain_id': domain_id})
+
+        self.project_channel_mgr.delete_project_channel_by_vo(project_channel_vo)
 
     @transaction(append_meta={'authorization.scope': 'PROJECT'})
     @check_required(['project_channel_id', 'domain_id'])
@@ -228,7 +276,8 @@ class ProjectChannelService(BaseService):
         'mutation.append_parameter': {'user_projects': 'authorization.projects'}
     })
     @check_required(['domain_id'])
-    @append_query_filter(['project_channel_id', 'name', 'state', 'schema', 'secret_id', 'notification_level', 'protocol_id', 'project_id', 'user_projects', 'domain_id'])
+    @append_query_filter(['project_channel_id', 'name', 'state', 'schema', 'secret_id', 'is_subscribe', 'is_scheduled',
+                          'notification_level', 'protocol_id', 'project_id', 'user_projects', 'domain_id'])
     @change_tag_filter('tags')
     @append_keyword_filter(['project_channel_id'])
     def list(self, params):
@@ -241,6 +290,8 @@ class ProjectChannelService(BaseService):
                 'state': 'str',
                 'schema': 'str',
                 'secret_id': 'str',
+                'is_subscribe': 'bool',
+                'is_scheduled': 'bool',
                 'notification_level': 'str',
                 'protocol_id': 'str',
                 'project_id': 'str',
@@ -252,7 +303,6 @@ class ProjectChannelService(BaseService):
             results (list): 'list of project_channel_vo'
             total_count (int)
         """
-
         query = params.get('query', {})
         return self.project_channel_mgr.list_project_channels(query)
 
@@ -278,3 +328,16 @@ class ProjectChannelService(BaseService):
         query = params.get('query', {})
         return self.project_channel_mgr.stat_project_channels(query)
 
+    @staticmethod
+    def validate_schedule(schedule):
+        if 'day_of_week' not in schedule:
+            raise ERROR_REQUIRED_PARAMETER(key='schedule.day_of_week')
+
+        if 'start_hour' not in schedule:
+            schedule.update({'start_hour': 0})
+
+        if 'end_hour' not in schedule:
+            schedule.update({'end_hour': 0})
+
+        if schedule['start_hour'] > schedule['end_hour']:
+            raise ERROR_WRONG_SCHEDULE_HOURS_SETTINGS(start_hour=schedule['start_hour'], end_hour=schedule['end_hour'])
