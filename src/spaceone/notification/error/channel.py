@@ -1,7 +1,10 @@
 from spaceone.core.error import *
 
-class ERROR_PROTOCOL_DISABLED(ERROR_INVALID_ARGUMENT):
+class ERROR_PROTOCOL_DISABLED(ERROR_BASE):
     _message = 'Protocol was disabled.'
+
+class ERROR_PROTOCOL_INTERNVAL(ERROR_BASE):
+    _message = 'Protocol can be set when protocol type is EXTERNAL only'
 
 class ERROR_NOT_SUPPORT_SCHEMA(ERROR_INVALID_ARGUMENT):
     _message = 'Protocol is not supported schema. (schema = {schema})'
