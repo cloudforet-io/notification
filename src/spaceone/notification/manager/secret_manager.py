@@ -17,6 +17,15 @@ class SecretManager(BaseManager):
     def create_secret(self, params):
         return self.secret_connector.create_secret(params)
 
+    def update_secret(self, params):
+        return self.secret_connector.update_secret(params)
+
+    def update_secret_data(self, params):
+        return self.secret_connector.update_secret_data(params)
+
+    def delete_secret(self, params):
+        self.secret_connector.delete_secret(params)
+
     def list_secrets(self, query, domain_id):
         return self.secret_connector.list_secrets(query, domain_id)
 
