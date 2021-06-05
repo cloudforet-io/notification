@@ -1,5 +1,6 @@
 from mongoengine import *
 from spaceone.core.model.mongo_model import MongoModel
+from spaceone.notification.model.protocol_model import Protocol
 
 
 class Schedule(EmbeddedDocument):
@@ -18,9 +19,9 @@ class ProjectChannel(MongoModel):
     data = DictField()
     is_subscribe = BooleanField(default=False)
     subscriptions = ListField(StringField(max_length=255), default=[])
-    notification_level = StringField(default='ALL', max_length=40)
+    notification_level = StringField(default='ALL', max_length=40, choices=('ALL', 'LV1', 'LV2', 'LV3', 'LV4', 'LV5'))
     is_scheduled = BooleanField(default=False)
-    schedule = EmbeddedDocumentField(Schedule, default={})
+    schedule = EmbeddedDocumentField(Schedule, default=None, null=True)
     tags = DictField()
     secret_id = StringField(max_length=255)
     domain_id = StringField(max_length=255)
