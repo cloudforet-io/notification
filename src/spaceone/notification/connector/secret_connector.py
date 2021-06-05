@@ -35,6 +35,17 @@ class SecretConnector(BaseConnector):
         response = self.client.Secret.create(params, metadata=self.transaction.get_connection_meta())
         return self._change_message(response)
 
+    def update_secret(self, params):
+        response = self.client.Secret.update(params, metadata=self.transaction.get_connection_meta())
+        return self._change_message(response)
+
+    def update_secret_data(self, params):
+        response = self.client.Secret.update_data(params, metadata=self.transaction.get_connection_meta())
+        return self._change_message(response)
+
+    def delete_secret(self, params):
+        self.client.Secret.delete(params, metadata=self.transaction.get_connection_meta())
+
     def list_secrets(self, query, domain_id):
         response = self.client.Secret.list({
             'query': query,
