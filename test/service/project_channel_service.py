@@ -8,19 +8,15 @@ from spaceone.core import config
 from spaceone.core import utils
 from spaceone.core.model.mongo_model import MongoModel
 from spaceone.core.transaction import Transaction
-from spaceone.notification.error import *
 
 from spaceone.notification.service.project_channel_service import ProjectChannelService
 from spaceone.notification.model.project_channel_model import ProjectChannel
-from spaceone.notification.connector.plugin_connector import PluginConnector
-from spaceone.notification.connector.repository_connector import RepositoryConnector
-from spaceone.notification.connector.notification_plugin_connector import NotificationPluginConnector
 from spaceone.notification.connector.secret_connector import SecretConnector
 from spaceone.notification.connector.identity_connector import IdentityConnector
 from spaceone.notification.info.project_channel_info import *
 from spaceone.notification.info.common_info import StatisticsInfo
 from test.factory.protocol_factory import ProtocolFactory
-from test.factory.project_channel_factory import ProjectChannelFactory, ScheduleFactory
+from test.factory.project_channel_factory import ProjectChannelFactory
 
 
 class TestProjectChannelService(unittest.TestCase):
@@ -264,7 +260,7 @@ class TestProjectChannelService(unittest.TestCase):
     @patch.object(SecretConnector, '__init__', return_value=None)
     @patch.object(IdentityConnector, '__init__', return_value=None)
     @patch.object(MongoModel, 'connect', return_value=None)
-    def test_delete_protocol(self, *args):
+    def test_delete_project_channel(self, *args):
         project_channel_vo = ProjectChannelFactory(domain_id=self.domain_id)
         params = {
             'project_channel_id': project_channel_vo.project_channel_id,
@@ -281,7 +277,7 @@ class TestProjectChannelService(unittest.TestCase):
     @patch.object(IdentityConnector, '__init__', return_value=None)
     @patch.object(SecretConnector, 'delete_secret')
     @patch.object(MongoModel, 'connect', return_value=None)
-    def test_delete_protocol_secret(self, *args):
+    def test_delete_user_channel_secret(self, *args):
         project_channel_vo = ProjectChannelFactory(domain_id=self.domain_id, secret_id='secret-abcde')
         params = {
             'project_channel_id': project_channel_vo.project_channel_id,

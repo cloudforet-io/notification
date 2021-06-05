@@ -1,12 +1,6 @@
 from mongoengine import *
 from spaceone.core.model.mongo_model import MongoModel
-from spaceone.notification.model.protocol_model import Protocol
-
-
-class Schedule(EmbeddedDocument):
-    day_of_week = ListField(StringField(choices=['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'], required=True))
-    start_hour = IntField(required=True, default=0)
-    end_hour = IntField(required=True)
+from spaceone.notification.model.schedule_model import Schedule
 
 
 class ProjectChannel(MongoModel):

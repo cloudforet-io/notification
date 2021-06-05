@@ -39,8 +39,7 @@ class UserChannelManager(BaseManager):
 
     def delete_user_channel(self, user_channel_id, domain_id):
         user_channel_vo: UserChannel = self.get_user_channel(user_channel_id, domain_id)
-
-        user_channel_vo.delete()
+        self.delete_user_channel_by_vo(user_channel_vo)
 
     def enable_user_channel(self, user_channel_id, domain_id):
         def _rollback(old_data):
@@ -78,3 +77,7 @@ class UserChannelManager(BaseManager):
 
     def stat_user_channels(self, query):
         return self.user_channel_model.stat(**query)
+
+    @staticmethod
+    def delete_user_channel_by_vo(user_channel_vo):
+        user_channel_vo.delete()
