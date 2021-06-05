@@ -1,8 +1,6 @@
 import logging
 from spaceone.core.manager import BaseManager
 from spaceone.notification.model.protocol_model import Protocol
-from spaceone.notification.conf.protocol_conf import DEFAULT_PROTOCOLS
-from spaceone.notification.error import *
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -39,9 +37,7 @@ class ProtocolManager(BaseManager):
         return protocol_vo.update(params)
 
     def delete_protocol(self, protocol_id, domain_id):
-        protocol_vo: Protocol = self.get_protocol(protocol_id, domain_id)
-        # TODO: Required to check existed channel using protocol
-        protocol_vo.delete()
+        self.delete_protocol_by_vo(self.get_protocol(protocol_id, domain_id))
 
     def enable_protocol(self, protocol_id, domain_id):
         def _rollback(old_data):
@@ -77,6 +73,10 @@ class ProtocolManager(BaseManager):
 
     def stat_protocols(self, query):
         return self.protocol_model.stat(**query)
+
+    @staticmethod
+    def delete_protocol_by_vo(protocol_vo):
+        return protocol_vo.delete()
 
     # def create_default_protocols(self, installed_protocols, domain_id):
     #     for single_protocol in DEFAULT_PROTOCOLS:

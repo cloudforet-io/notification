@@ -24,7 +24,7 @@ class TestProtocolService(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        config.init_conf(package='spaceone.notificaiton')
+        config.init_conf(package='spaceone.notification')
         connect('test', host='mongomock://localhost')
 
         cls.domain_id = utils.generate_id('domain')
@@ -57,17 +57,15 @@ class TestProtocolService(unittest.TestCase):
     @patch.object(RepositoryConnector, 'get_plugin')
     @patch.object(SecretConnector, 'list_secrets')
     @patch.object(NotificationPluginConnector, 'init')
-    def test_register_metric_data_source_with_secret_id(self, mock_plugin_verify, mock_list_secrets,
-                                                        mock_get_plugin, *args):
+    def test_create_protocol(self, mock_plugin_verify, mock_list_secrets, mock_get_plugin, *args):
         secret_id = utils.generate_id('secret')
         plugin_id = utils.generate_id('plugin')
         plugin_version = '1.0'
 
         mock_plugin_verify.return_value = {
             'metadata': {
-                'supported_resource_type': ['inventory.Server', 'inventory.CloudService'],
-                'supported_stat': ['AVERAGE', 'MAX', 'MIN'],
-                'required_keys': ['reference.resource_id']
+                'supported_schema': ['slack_webhook', 'spaceone_user'],
+                'data_type': 'PLAIN_TEXT'
             }
         }
 
@@ -80,20 +78,25 @@ class TestProtocolService(unittest.TestCase):
         }
 
         mock_get_plugin.return_value = {
+            'name': 'notification-slack-protocol',
+            'service_type': 'notification.Protocol',
+            'image': 'pyengine/notification-slack-protocol',
             'capability': {
-                'supported_schema': ['aws_access_key', 'aws_assume_role'],
-                'monitoring_type': 'METRIC'
+                'supported_schema': ['slack_webhook', 'spaceone_user'],
+                'data_type': 'PLAIN_TEXT'
             },
-            'provider': 'aws'
+            'tags': {
+                'description': 'Notification Slack Protocol',
+                'spaceone:plugin_name': 'notification-slack-protocol'
+            }
         }
 
         params = {
-            'name': 'AWS CloudWatch',
+            'name': 'Slack Notification',
             'plugin_info': {
                 'plugin_id': plugin_id,
                 'version': plugin_version,
                 'options': {},
-                'secret_id': secret_id
             },
             'tags': {
                 utils.random_string(): utils.random_string()
@@ -101,18 +104,19 @@ class TestProtocolService(unittest.TestCase):
             'domain_id': self.domain_id
         }
 
-        self.transaction.method = 'register'
-        data_source_svc = DataSourceService(transaction=self.transaction)
-        data_source_vo = data_source_svc.register(params.copy())
+        self.transaction.method = 'create'
+        protocol_svc = ProtocolService(transaction=self.transaction)
+        protocol_vo = protocol_svc.create(params.copy())
 
-        print_data(data_source_vo.to_dict(), 'test_register_metric_data_source_with_secret_id')
-        DataSourceInfo(data_source_vo)
+        print_data(protocol_vo.to_dict(), 'test_create_protocol')
+        ProtocolInfo(protocol_vo)
 
-        self.assertIsInstance(data_source_vo, DataSource)
-        self.assertEqual(params['name'], data_source_vo.name)
-        self.assertEqual(params['tags'], utils.tags_to_dict(data_source_vo.tags))
-        self.assertEqual(params['domain_id'], data_source_vo.domain_id)
+        self.assertIsInstance(protocol_vo, Protocol)
+        self.assertEqual(params['name'], protocol_vo.name)
+        self.assertEqual(params['tags'], protocol_vo.tags)
+        self.assertEqual(params['domain_id'], protocol_vo.domain_id)
 
+    '''
     @patch.object(MongoModel, 'connect', return_value=None)
     @patch.object(RepositoryConnector, '__init__', return_value=None)
     @patch.object(SecretConnector, '__init__', return_value=None)
@@ -179,16 +183,49 @@ class TestProtocolService(unittest.TestCase):
         self.assertEqual(params['name'], data_source_vo.name)
         self.assertEqual(params['tags'], utils.tags_to_dict(data_source_vo.tags))
         self.assertEqual(params['domain_id'], data_source_vo.domain_id)
+    '''
 
     @patch.object(MongoModel, 'connect', return_value=None)
+    def test_update_protocol(self, *args):
+        protocol_vo = ProtocolFactory(domain_id=self.domain_id)
+        params = {
+            'protocol_id': protocol_vo.protocol_id,
+            'name': 'Update New Protocol',
+            'tags': {
+                'update_key': 'update_value'
+            },
+            'domain_id': self.domain_id
+        }
+
+        self.transaction.method = 'update'
+        protocol_svc = ProtocolService(transaction=self.transaction)
+        update_protocol_vo = protocol_svc.update(params.copy())
+
+        print_data(update_protocol_vo.to_dict(), 'test_update_protocol')
+        ProtocolInfo(update_protocol_vo)
+
+        self.assertIsInstance(update_protocol_vo, Protocol)
+        self.assertEqual(update_protocol_vo.protocol_id, protocol_vo.protocol_id)
+        self.assertEqual(params['name'], update_protocol_vo.name)
+        self.assertEqual(params['tags'], update_protocol_vo.tags)
+
+    @patch.object(MongoModel, 'connect', return_value=None)
+    @patch.object(RepositoryConnector, '__init__', return_value=None)
+    @patch.object(RepositoryConnector, 'get_plugin_versions', return_value=['1.0', '1.1', '1.2'])
+    @patch.object(RepositoryConnector, 'get_plugin')
     @patch.object(SecretConnector, '__init__', return_value=None)
     @patch.object(PluginConnector, '__init__', return_value=None)
     @patch.object(PluginConnector, 'get_plugin_endpoint', return_value='grpc://plugin.spaceone.dev:50051')
-    @patch.object(MonitoringPluginConnector, 'initialize', return_value=None)
+    @patch.object(NotificationPluginConnector, 'initialize', return_value=None)
     @patch.object(SecretConnector, 'get_secret_data', return_value={'data': {}})
     @patch.object(SecretConnector, 'list_secrets')
-    @patch.object(MonitoringPluginConnector, 'init')
-    def test_update_data_source(self, mock_plugin_init, mock_list_secrets, *args):
+    @patch.object(NotificationPluginConnector, 'init')
+    def test_update_protocol_plugin(self, mock_plugin_init, mock_list_secrets, *args):
+        plugin_version = '1.2'
+        update_options = {
+            'test': 'xxxxx'
+        }
+
         mock_plugin_init.return_value = {
             'metadata': {
                 'supported_resource_type': ['inventory.Server'],
@@ -204,190 +241,188 @@ class TestProtocolService(unittest.TestCase):
             'total_count': 1
         }
 
-        new_data_source_vo = DataSourceFactory(domain_id=self.domain_id)
+        protocol_vo = ProtocolFactory(domain_id=self.domain_id)
         params = {
-            'data_source_id': new_data_source_vo.data_source_id,
-            'name': 'Update AWS CloudWatch',
-            'plugin_info': {
-                'plugin_id': new_data_source_vo.plugin_info.plugin_id,
-                'version': '2.0',
-                'options': {},
-                'provider': 'aws'
-            },
-            'tags': {
-                'update_key': 'update_value'
-            },
+            'protocol_id': protocol_vo.protocol_id,
+            'version': plugin_version,
+            'options': update_options,
             'domain_id': self.domain_id
         }
 
-        self.transaction.method = 'update'
-        data_source_svc = DataSourceService(transaction=self.transaction)
-        data_source_vo = data_source_svc.update(params.copy())
+        self.transaction.method = 'update_plugin'
+        protocol_svc = ProtocolService(transaction=self.transaction)
+        new_protocol_vo = protocol_svc.update_plugin(params.copy())
 
-        print_data(data_source_vo.to_dict(), 'test_update_data_source')
-        DataSourceInfo(data_source_vo)
+        print_data(new_protocol_vo.to_dict(), 'test_update_protocol_plugin')
+        ProtocolInfo(new_protocol_vo)
 
-        self.assertIsInstance(data_source_vo, DataSource)
-        self.assertEqual(new_data_source_vo.data_source_id, data_source_vo.data_source_id)
-        self.assertEqual(params['name'], data_source_vo.name)
-        self.assertEqual(params['tags'], utils.tags_to_dict(data_source_vo.tags))
+        self.assertIsInstance(new_protocol_vo, Protocol)
+        self.assertEqual(new_protocol_vo.protocol_id, protocol_vo.protocol_id)
+        self.assertEqual(params['version'], new_protocol_vo.plugin_info.version)
+        self.assertEqual(params['options'], new_protocol_vo.plugin_info.options)
 
     @patch.object(MongoModel, 'connect', return_value=None)
-    def test_enable_data_source(self, *args):
-        new_data_source_vo = DataSourceFactory(domain_id=self.domain_id, state='DISABLED')
+    def test_enable_protocol(self, *args):
+        protocol_vo = ProtocolFactory(domain_id=self.domain_id, state='DISABLED')
         params = {
-            'data_source_id': new_data_source_vo.data_source_id,
+            'protocol_id': protocol_vo.protocol_id,
             'domain_id': self.domain_id
         }
 
         self.transaction.method = 'enable'
-        data_source_svc = DataSourceService(transaction=self.transaction)
-        data_source_vo = data_source_svc.enable(params.copy())
+        protocol_svc = ProtocolService(transaction=self.transaction)
+        updated_protocol_vo = protocol_svc.enable(params.copy())
 
-        print_data(data_source_vo.to_dict(), 'test_enable_data_source')
-        DataSourceInfo(data_source_vo)
+        print_data(updated_protocol_vo.to_dict(), 'test_enable_protocol')
+        ProtocolInfo(updated_protocol_vo)
 
-        self.assertIsInstance(data_source_vo, DataSource)
-        self.assertEqual(new_data_source_vo.data_source_id, data_source_vo.data_source_id)
-        self.assertEqual('ENABLED', data_source_vo.state)
+        self.assertIsInstance(updated_protocol_vo, Protocol)
+        self.assertEqual(updated_protocol_vo.protocol_id, protocol_vo.protocol_id)
+        self.assertEqual('ENABLED', updated_protocol_vo.state)
 
     @patch.object(MongoModel, 'connect', return_value=None)
-    def test_disable_data_source(self, *args):
-        new_data_source_vo = DataSourceFactory(domain_id=self.domain_id, state='ENABLED')
+    def test_disable_protocol(self, *args):
+        protocol_vo = ProtocolFactory(domain_id=self.domain_id, state='ENABLED')
         params = {
-            'data_source_id': new_data_source_vo.data_source_id,
+            'protocol_id': protocol_vo.protocol_id,
             'domain_id': self.domain_id
         }
 
         self.transaction.method = 'disable'
-        data_source_svc = DataSourceService(transaction=self.transaction)
-        data_source_vo = data_source_svc.disable(params.copy())
+        protocol_svc = ProtocolService(transaction=self.transaction)
+        updated_protocol_vo = protocol_svc.disable(params.copy())
 
-        print_data(data_source_vo.to_dict(), 'test_disable_data_source')
-        DataSourceInfo(data_source_vo)
+        print_data(updated_protocol_vo.to_dict(), 'test_disable_protocol')
+        ProtocolInfo(updated_protocol_vo)
 
-        self.assertIsInstance(data_source_vo, DataSource)
-        self.assertEqual(new_data_source_vo.data_source_id, data_source_vo.data_source_id)
-        self.assertEqual('DISABLED', data_source_vo.state)
+        self.assertIsInstance(updated_protocol_vo, Protocol)
+        self.assertEqual(updated_protocol_vo.protocol_id, protocol_vo.protocol_id)
+        self.assertEqual('DISABLED', updated_protocol_vo.state)
 
     @patch.object(MongoModel, 'connect', return_value=None)
-    def test_deregister_data_source(self, *args):
-        new_data_source_vo = DataSourceFactory(domain_id=self.domain_id)
+    def test_delete_protocol(self, *args):
+        protocol_vo = ProtocolFactory(domain_id=self.domain_id)
         params = {
-            'data_source_id': new_data_source_vo.data_source_id,
+            'protocol_id': protocol_vo.protocol_id,
             'domain_id': self.domain_id
         }
 
-        self.transaction.method = 'deregister'
-        data_source_svc = DataSourceService(transaction=self.transaction)
-        result = data_source_svc.deregister(params)
+        self.transaction.method = 'delete'
+        protocol_svc = ProtocolService(transaction=self.transaction)
+        result = protocol_svc.delete(params)
 
         self.assertIsNone(result)
 
     @patch.object(MongoModel, 'connect', return_value=None)
-    def test_get_data_source(self, *args):
-        new_data_source_vo = DataSourceFactory(domain_id=self.domain_id)
+    def test_get_protocol(self, *args):
+        protocol_vo = ProtocolFactory(domain_id=self.domain_id)
         params = {
-            'data_source_id': new_data_source_vo.data_source_id,
+            'protocol_id': protocol_vo.protocol_id,
             'domain_id': self.domain_id
         }
 
         self.transaction.method = 'get'
-        data_source_svc = DataSourceService(transaction=self.transaction)
-        data_source_vo = data_source_svc.get(params)
+        protocol_svc = ProtocolService(transaction=self.transaction)
+        protocol_vo = protocol_svc.get(params)
 
-        print_data(data_source_vo.to_dict(), 'test_get_data_source')
-        DataSourceInfo(data_source_vo)
+        print_data(protocol_vo.to_dict(), 'test_get_protocol')
+        ProtocolInfo(protocol_vo)
 
-        self.assertIsInstance(data_source_vo, DataSource)
+        self.assertIsInstance(protocol_vo, Protocol)
 
     @patch.object(MongoModel, 'connect', return_value=None)
-    def test_list_data_sources_by_data_source_id(self, *args):
-        data_source_vos = DataSourceFactory.build_batch(10, domain_id=self.domain_id)
-        list(map(lambda vo: vo.save(), data_source_vos))
+    def test_list_protocol_by_protocol_id(self, *args):
+        protocol_vos = ProtocolFactory.build_batch(10, domain_id=self.domain_id)
+        list(map(lambda vo: vo.save(), protocol_vos))
 
         params = {
-            'data_source_id': data_source_vos[0].data_source_id,
+            'protocol_id': protocol_vos[0].protocol_id,
             'domain_id': self.domain_id
         }
 
         self.transaction.method = 'list'
-        data_source_svc = DataSourceService(transaction=self.transaction)
-        data_sources_vos, total_count = data_source_svc.list(params)
-        DataSourcesInfo(data_source_vos, total_count)
+        protocol_svc = ProtocolService(transaction=self.transaction)
+        protocol_vos, total_count = protocol_svc.list(params)
+        ProtocolsInfo(protocol_vos, total_count)
 
-        self.assertEqual(len(data_sources_vos), 1)
-        self.assertIsInstance(data_sources_vos[0], DataSource)
+        self.assertEqual(len(protocol_vos), 1)
+        self.assertIsInstance(protocol_vos[0], Protocol)
         self.assertEqual(total_count, 1)
 
     @patch.object(MongoModel, 'connect', return_value=None)
-    def test_list_data_sources_by_name(self, *args):
-        data_source_vos = DataSourceFactory.build_batch(10, domain_id=self.domain_id)
-        list(map(lambda vo: vo.save(), data_source_vos))
+    def test_list_protocols_by_name(self, *args):
+        protocol_vos = ProtocolFactory.build_batch(10, domain_id=self.domain_id)
+        list(map(lambda vo: vo.save(), protocol_vos))
 
         params = {
-            'name': data_source_vos[0].name,
+            'name': protocol_vos[0].name,
             'domain_id': self.domain_id
         }
 
         self.transaction.method = 'list'
-        data_source_svc = DataSourceService(transaction=self.transaction)
-        data_sources_vos, total_count = data_source_svc.list(params)
-        DataSourcesInfo(data_source_vos, total_count)
+        protocol_svc = ProtocolService(transaction=self.transaction)
+        protocol_vos, total_count = protocol_svc.list(params)
+        ProtocolsInfo(protocol_vos, total_count)
 
-        self.assertEqual(len(data_sources_vos), 1)
-        self.assertIsInstance(data_sources_vos[0], DataSource)
+        self.assertEqual(len(protocol_vos), 1)
+        self.assertIsInstance(protocol_vos[0], Protocol)
         self.assertEqual(total_count, 1)
 
     @patch.object(MongoModel, 'connect', return_value=None)
-    def test_list_data_sources_by_monitoring_type(self, *args):
-        data_source_vos = DataSourceFactory.build_batch(10, monitoring_type='METRIC', domain_id=self.domain_id)
-        list(map(lambda vo: vo.save(), data_source_vos))
+    def test_list_protocols_by_protocol_type(self, *args):
+        internal_protocol_vos = ProtocolFactory.build_batch(5, protocol_type='INTERNAL', domain_id=self.domain_id)
+        external_protocol_vos = ProtocolFactory.build_batch(10, protocol_type='EXTERNAL', domain_id=self.domain_id)
+        list(map(lambda vo: vo.save(), external_protocol_vos))
 
         params = {
-            'monitoring_type': 'METRIC',
+            'protocol_type': 'EXTERNAL',
             'domain_id': self.domain_id
         }
 
         self.transaction.method = 'list'
-        data_source_svc = DataSourceService(transaction=self.transaction)
-        data_sources_vos, total_count = data_source_svc.list(params)
-        DataSourcesInfo(data_source_vos, total_count)
+        protocol_svc = ProtocolService(transaction=self.transaction)
+        protocol_vos, total_count = protocol_svc.list(params)
+        ProtocolsInfo(protocol_vos, total_count)
 
-        self.assertEqual(len(data_sources_vos), 10)
-        self.assertIsInstance(data_sources_vos[0], DataSource)
+        self.assertEqual(len(protocol_vos), 10)
+        self.assertIsInstance(protocol_vos[0], Protocol)
         self.assertEqual(total_count, 10)
 
+    '''
     @patch.object(MongoModel, 'connect', return_value=None)
-    def test_list_data_sources_by_tag(self, *args):
-        DataSourceFactory(tags=[{'key': 'tag_key_1', 'value': 'tag_value_1'}], domain_id=self.domain_id)
-        data_source_vos = DataSourceFactory.build_batch(9, domain_id=self.domain_id)
-        list(map(lambda vo: vo.save(), data_source_vos))
+    def test_list_protocols_by_tag(self, *args):
+        ProtocolFactory(tags={'xxxxx': 'aaaaaa', 'yyyyy': 'bbbbbb'}, domain_id=self.domain_id)
+        protocol_vos = ProtocolFactory.build_batch(9, domain_id=self.domain_id)
+        list(map(lambda vo: vo.save(), protocol_vos))
 
         params = {
             'query': {
                 'filter': [{
-                    'k': 'tags.tag_key_1',
-                    'v': 'tag_value_1',
+                    'k': 'tags.xxxxx',
+                    'v': 'aaaaaa',
                     'o': 'eq'
                 }]
             },
             'domain_id': self.domain_id
         }
 
-        self.transaction.method = 'list'
-        data_source_svc = DataSourceService(transaction=self.transaction)
-        data_sources_vos, total_count = data_source_svc.list(params)
-        DataSourcesInfo(data_source_vos, total_count)
+        for protocol_vo in protocol_vos:
+            print(protocol_vo.tags)
 
-        self.assertEqual(len(data_sources_vos), 1)
-        self.assertIsInstance(data_sources_vos[0], DataSource)
+        self.transaction.method = 'list'
+        protocol_svc = ProtocolService(transaction=self.transaction)
+        protocol_vos, total_count = protocol_svc.list(params)
+        ProtocolsInfo(protocol_vos, total_count)
+
+        self.assertEqual(len(protocol_vos), 1)
+        self.assertIsInstance(protocol_vos[0], Protocol)
         self.assertEqual(total_count, 1)
+    '''
 
     @patch.object(MongoModel, 'connect', return_value=None)
-    def test_stat_data_source(self, *args):
-        data_source_vos = DataSourceFactory.build_batch(10, domain_id=self.domain_id)
-        list(map(lambda vo: vo.save(), data_source_vos))
+    def test_stat_protocol(self, *args):
+        protocol_vos = ProtocolFactory.build_batch(10, domain_id=self.domain_id)
+        list(map(lambda vo: vo.save(), protocol_vos))
 
         params = {
             'domain_id': self.domain_id,
@@ -395,7 +430,7 @@ class TestProtocolService(unittest.TestCase):
                 'aggregate': [{
                     'group': {
                         'keys': [{
-                            'key': 'data_source_id',
+                            'key': 'protocol_id',
                             'name': 'Id'
                         }],
                         'fields': [{
@@ -413,21 +448,21 @@ class TestProtocolService(unittest.TestCase):
         }
 
         self.transaction.method = 'stat'
-        data_source_svc = DataSourceService(transaction=self.transaction)
-        values = data_source_svc.stat(params)
+        protocol_svc = ProtocolService(transaction=self.transaction)
+        values = protocol_svc.stat(params)
         StatisticsInfo(values)
 
-        print_data(values, 'test_stat_data_source')
+        print_data(values, 'test_stat_protocol')
 
     @patch.object(MongoModel, 'connect', return_value=None)
-    def test_stat_data_source_distinct(self, *args):
-        data_source_vos = DataSourceFactory.build_batch(10, domain_id=self.domain_id)
-        list(map(lambda vo: vo.save(), data_source_vos))
+    def test_stat_protocol_distinct(self, *args):
+        protocol_vos = ProtocolFactory.build_batch(10, domain_id=self.domain_id)
+        list(map(lambda vo: vo.save(), protocol_vos))
 
         params = {
             'domain_id': self.domain_id,
             'query': {
-                'distinct': 'data_source_id',
+                'distinct': 'protocol_id',
                 'page': {
                     'start': 2,
                     'limit': 3
@@ -436,11 +471,11 @@ class TestProtocolService(unittest.TestCase):
         }
 
         self.transaction.method = 'stat'
-        data_source_svc = DataSourceService(transaction=self.transaction)
-        values = data_source_svc.stat(params)
+        protocol_svc = ProtocolService(transaction=self.transaction)
+        values = protocol_svc.stat(params)
         StatisticsInfo(values)
 
-        print_data(values, 'test_stat_data_source_distinct')
+        print_data(values, 'test_stat_protocol_distinct')
 
 
 if __name__ == "__main__":

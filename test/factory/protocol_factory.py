@@ -29,7 +29,7 @@ class ProtocolFactory(factory.mongoengine.MongoEngineFactory):
     capability = {
         'data_type': 'PLAIN_TEXT',
         'supported_schema': [
-            'slack_webhook'
+            'slack_protocol'
         ]
     }
 

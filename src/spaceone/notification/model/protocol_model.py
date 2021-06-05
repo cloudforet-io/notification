@@ -14,7 +14,7 @@ class Protocol(MongoModel):
     name = StringField(max_length=255)
     state = StringField(max_length=20, default='ENABLED', choices=('ENABLED', 'DISABLED'))
     protocol_type = StringField(max_length=40, default='EXTERNAL', choices=('EXTERNAL', 'INTERNAL'))
-    resource_type = StringField(max_length=40, choices=('identity.User', 'identity.Project'))
+    resource_type = StringField(max_length=40, null=True, default=None)
     capability = DictField()
     plugin_info = EmbeddedDocumentField(PluginInfo, default={})
     tags = DictField()
