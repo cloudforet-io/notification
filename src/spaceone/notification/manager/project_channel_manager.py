@@ -38,8 +38,7 @@ class ProjectChannelManager(BaseManager):
 
     def delete_project_channel(self, project_channel_id, domain_id):
         project_channel_vo: ProjectChannel = self.get_project_channel(project_channel_id, domain_id)
-
-        project_channel_vo.delete()
+        self.delete_project_channel_by_vo(project_channel_vo)
 
     def enable_project_channel(self, project_channel_id, domain_id):
         def _rollback(old_data):
@@ -77,3 +76,7 @@ class ProjectChannelManager(BaseManager):
 
     def stat_project_channels(self, query):
         return self.project_channel_model.stat(**query)
+
+    @staticmethod
+    def delete_project_channel_by_vo(project_channel_vo):
+        project_channel_vo.delete()
