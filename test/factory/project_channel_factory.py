@@ -1,17 +1,8 @@
 import factory
 
 from spaceone.core import utils
-from spaceone.notification.model.project_channel_model import ProjectChannel, Schedule
-
-
-class ScheduleFactory(factory.mongoengine.MongoEngineFactory):
-
-    class Meta:
-        model = Schedule
-
-    day_of_week = ['MON', 'WED', 'FRI']
-    start_hour = 8
-    end_hour = 19
+from spaceone.notification.model.project_channel_model import ProjectChannel
+from .schedule_factory import ScheduleFactory
 
 
 class ProjectChannelFactory(factory.mongoengine.MongoEngineFactory):
