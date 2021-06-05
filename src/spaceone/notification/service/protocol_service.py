@@ -18,8 +18,8 @@ _LOGGER = logging.getLogger(__name__)
 @event_handler
 class ProtocolService(BaseService):
 
-    def __init__(self, metadata):
-        super().__init__(metadata)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.protocol_mgr: ProtocolManager = self.locator.get_manager('ProtocolManager')
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
@@ -39,27 +39,17 @@ class ProtocolService(BaseService):
             protocol_vo (object)
         """
         domain_id = params['domain_id']
+
         self._check_plugin_info(params['plugin_info'])
-        # plugin_info = self._get_plugin(params['plugin_info'], params['domain_id'])
+        plugin = self._get_plugin(params['plugin_info'], domain_id)
 
-        # TODO::1 Please, Add a real Plugin_info to retrieve when its ready.
-        plugin_info = params['plugin_info']
-        options = plugin_info.get('options', {})
-        params['capability'] = options.get('capability')
-        del options['capability']
-
+        params['capability'] = plugin.get('capability', {})
         self._check_plugin_capability(params['capability'])
 
         _LOGGER.debug(f'[create] capability: {params["capability"]}')
         _LOGGER.debug(f'[create] name: {params["name"]}')
 
-        params['protocol_type'] = 'EXTERNAL'
-        params['resource_type'] = 'inventory.Collector'
-
-        # TODO::2 Please, Add a real Plugin_info to retrieve when its ready.
-        # plugin_metadata = self._init_plugin(params['plugin_info'], domain_id)
-        # params['plugin_info']['metadata'] = plugin_metadata
-
+        self._init_plugin(params['plugin_info'], domain_id)
         protocol_vo: Protocol = self.protocol_mgr.create_protocol(params)
 
         return protocol_vo
@@ -83,6 +73,7 @@ class ProtocolService(BaseService):
 
         domain_id = params['domain_id']
         protocol_id = params['protocol_id']
+
         protocol_vo = self.protocol_mgr.get_protocol(protocol_id, domain_id)
 
         if protocol_vo.protocol_type == 'INTERNAL':
@@ -98,8 +89,8 @@ class ProtocolService(BaseService):
         Args:
             params (dict): {
                 'protocol_id': 'str',
-                'name': 'str',
-                'tags': 'dict',
+                'version': 'str',
+                'options': 'dict',
                 'domain_id': 'str'
             }
 
@@ -107,23 +98,25 @@ class ProtocolService(BaseService):
             protocol_vo (object)
         """
 
-        protocol_id = params['data_source_id']
+        protocol_id = params['protocol_id']
         domain_id = params['domain_id']
-        options = params.get('options')
+
         version = params.get('version')
+        options = params.get('options')
 
         protocol_vo = self.protocol_mgr.get_protocol(protocol_id, domain_id)
-        protocol_dict = protocol_vo.to_dict()
-        plugin_info = protocol_dict['plugin_info']
+
+        plugin_info = protocol_vo.plugin_info
 
         if version:
             # Update plugin_version
-            plugin_id = plugin_info['plugin_id']
+            plugin_id = plugin_info.plugin_id
+
             repo_mgr = self.locator.get_manager('RepositoryManager')
             repo_mgr.check_plugin_version(plugin_id, version, domain_id)
 
             plugin_info['version'] = version
-            metadata = self._init_plugin(protocol_dict['plugin_info'], domain_id)
+            metadata = self._init_plugin(plugin_info, domain_id)
             plugin_info['metadata'] = metadata
 
         if options or options == {}:
@@ -274,9 +267,8 @@ class ProtocolService(BaseService):
 
         plugin_mgr: PluginManager = self.locator.get_manager('PluginManager')
         plugin_mgr.initialize(plugin_id, version, domain_id)
-        endpoint = plugin_mgr.get_endpoint(plugin_id, version, domain_id)
 
-        return plugin_mgr.init_plugin(endpoint, options)
+        return plugin_mgr.init_plugin(options)
 
     @staticmethod
     def _check_plugin_capability(capability):
@@ -293,15 +285,6 @@ class ProtocolService(BaseService):
     def _check_plugin_info(plugin_info_params):
         if 'plugin_id' not in plugin_info_params:
             raise ERROR_REQUIRED_PARAMETER(key='plugin_info.plugin_id')
-        else:
-            temp_plugin_id = plugin_info_params['plugin_id']
-            _temp_plugin_id = temp_plugin_id.split('-')
-            if len(_temp_plugin_id) != 2:
-                raise ERROR_INVALID_PARAMETER(key='plugin_info.plugin_id', reason='wrong format')
-            elif _temp_plugin_id[0] != 'plugin':
-                raise ERROR_INVALID_PARAMETER(key='plugin_info.plugin_id', reason='wrong format')
-            elif len(_temp_plugin_id[1]) != 12:
-                raise ERROR_INVALID_PARAMETER(key='plugin_info.plugin_id', reason='wrong format')
 
         if 'version' not in plugin_info_params:
             raise ERROR_REQUIRED_PARAMETER(key='plugin_info.version')
