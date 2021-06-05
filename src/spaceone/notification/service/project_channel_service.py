@@ -76,7 +76,7 @@ class ProjectChannelService(BaseService):
 
         if capability.get('data_type') == 'SECRET':
             new_secret_parameters = {
-                'name': 'project-channel-secret',
+                'name': utils.generate_id('secret-prj-ch-tmp', 4),
                 'secret_type': 'CREDENTIALS',
                 'data': data,
                 'schema': schema,
