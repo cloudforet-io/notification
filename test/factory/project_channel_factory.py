@@ -1,0 +1,46 @@
+import factory
+
+from spaceone.core import utils
+from spaceone.notification.model.project_channel_model import ProjectChannel, Schedule
+
+
+class ScheduleFactory(factory.mongoengine.MongoEngineFactory):
+
+    class Meta:
+        model = Schedule
+
+    day_of_week = ['MON', 'WED', 'FRI']
+    start_hour = 8
+    end_hour = 19
+
+
+class ProjectChannelFactory(factory.mongoengine.MongoEngineFactory):
+
+    class Meta:
+        model = ProjectChannel
+
+    project_channel_id = factory.LazyAttribute(lambda o: utils.generate_id('project-ch'))
+    protocol_id = utils.generate_id('protocol')
+    name = factory.LazyAttribute(lambda o: utils.random_string())
+
+    state = 'ENABLED'
+    schema = 'slack_webhook'
+    data = {
+        'token': utils.random_string(),
+        'channel': 'everyone'
+    }
+    is_subscribe = True
+    subscriptions = ['topic-a', 'topic-b']
+    notification_level = 'ALL'
+    is_scheduled = True
+
+    schedule = factory.SubFactory(ScheduleFactory)
+
+    tags = {
+        'xxx': 'yy'
+    }
+
+    domain_id = utils.generate_id('domain')
+    project_id = utils.generate_id('project')
+    created_at = factory.Faker('date_time')
+
