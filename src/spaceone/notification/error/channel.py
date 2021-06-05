@@ -1,26 +1,16 @@
 from spaceone.core.error import *
 
+class ERROR_PROTOCOL_DISABLED(ERROR_INVALID_ARGUMENT):
+    _message = 'Protocol was disabled.'
 
-class ERROR_NOT_SUPPORT_RESOURCE_TYPE(ERROR_INVALID_ARGUMENT):
-    _message = 'Data source not support resource_type. (supported_resource_type = {supported_resource_type})'
-
-class ERROR_NOT_SUPPORT_PROVIDER_MONITORING(ERROR_INVALID_ARGUMENT):
-    _message = 'Data source not support provider on monitoring. (provider = {provider})'
-
-class ERROR_NOT_MATCHING_RESOURCES(ERROR_INVALID_ARGUMENT):
-    _message = 'No Match found with given data. (monitoring = {monitoring})'
-
-class ERROR_NOT_FOUND_REFERENCE_KEY(ERROR_INVALID_ARGUMENT):
-    _message = 'Reference key not found in resource. (reference_keys = {reference_keys})'
+class ERROR_NOT_SUPPORT_SCHEMA(ERROR_INVALID_ARGUMENT):
+    _message = 'Protocol is not supported schema. (schema = {schema})'
 
 class ERROR_WRONG_SCHEDULE_SETTINGS(ERROR_BASE):
     _message = "The schedule format is incorrect. (key = {key})"
 
 class ERROR_WRONG_SCHEDULE_HOURS_SETTINGS(ERROR_BASE):
-    _message = "The end hour must be greater than start hour. (start = {start}, end={end})"
+    _message = "The end hour must be greater than start hour. (start_hour={start_hour}, end_hour={end_hour})"
 
 class ERROR_WRONG_SCHEDULE_DAY(ERROR_BASE):
     _message = "Invalid day to set schedule (day = {day})"
-
-class ERROR_INVALID_SUBSCRIPTIONS(ERROR_BASE):
-    _message = "Invalid subscriptions format, subscriptions must be list of string. (subscriptions = {subscriptions})"
