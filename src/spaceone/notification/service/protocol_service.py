@@ -97,18 +97,15 @@ class ProtocolService(BaseService):
         Returns:
             protocol_vo (object)
         """
-
         protocol_id = params['protocol_id']
         domain_id = params['domain_id']
 
-        version = params.get('version')
         options = params.get('options')
-
         protocol_vo = self.protocol_mgr.get_protocol(protocol_id, domain_id)
 
         plugin_info = protocol_vo.plugin_info
 
-        if version:
+        if version := params.get('version'):
             # Update plugin_version
             plugin_id = plugin_info.plugin_id
 
@@ -116,11 +113,10 @@ class ProtocolService(BaseService):
             repo_mgr.check_plugin_version(plugin_id, version, domain_id)
 
             plugin_info['version'] = version
-            metadata = self._init_plugin(plugin_info, domain_id)
-            plugin_info['metadata'] = metadata
+            self._init_plugin(plugin_info, domain_id)
 
         if options or options == {}:
-            # Overwriting
+            # Overwrite
             plugin_info['options'] = options
 
         params = {
