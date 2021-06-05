@@ -6,6 +6,8 @@ from spaceone.notification.error import *
 from spaceone.notification.manager import RepositoryManager
 from spaceone.notification.manager import ProtocolManager
 from spaceone.notification.manager import PluginManager
+from spaceone.notification.manager import ProjectChannelManager
+from spaceone.notification.manager import UserChannelManager
 from spaceone.notification.model import Protocol
 from spaceone.notification.conf.protocol_conf import DEFAULT_PROTOCOLS
 
@@ -145,8 +147,8 @@ class ProtocolService(BaseService):
         protocol_id = params['protocol_id']
         domain_id = params['domain_id']
 
-        protocol_vo = self.protocol_mgr.get_protocol(protocol_id, domain_id)
-        # TODO: Required to check existed channel using protocol
+        protocol_vo: Protocol = self.protocol_mgr.get_protocol(protocol_id, domain_id)
+        self.check_existed_channel_using_protocol(protocol_vo)
 
         return self.protocol_mgr.delete_protocol_by_vo(protocol_vo)
 
@@ -312,3 +314,15 @@ class ProtocolService(BaseService):
                 self.protocol_mgr.create_protocol(default_protocol)
 
         return True
+
+    def check_existed_channel_using_protocol(self, protocol_vo):
+        project_channel_mgr: ProjectChannelManager = self.locator.get_manager('ProjectChannelManager')
+        user_channel_mgr: UserChannelManager = self.locator.get_manager('UserChannelManager')
+
+        query = {'filter': [{'k': 'protocol_id', 'v': protocol_vo.protocol_id, 'o': 'eq'}]}
+
+        project_channel_vos, prj_ch_total_count = project_channel_mgr.list_project_channels(query)
+        user_channel_vos, user_ch_total_count = user_channel_mgr.list_user_channels(query)
+
+        if prj_ch_total_count > 0 or user_ch_total_count > 0:
+            raise EROR_DELETE_PROJECT_EXITED_CHANNEL(protocol_id=protocol_vo.protocol_id)
