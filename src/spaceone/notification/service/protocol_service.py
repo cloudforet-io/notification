@@ -145,7 +145,10 @@ class ProtocolService(BaseService):
         protocol_id = params['protocol_id']
         domain_id = params['domain_id']
 
-        return self.protocol_mgr.delete_protocol(protocol_id, domain_id)
+        protocol_vo = self.protocol_mgr.get_protocol(protocol_id, domain_id)
+        # TODO: Required to check existed channel using protocol
+
+        return self.protocol_mgr.delete_protocol_by_vo(protocol_vo)
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['protocol_id', 'domain_id'])
@@ -195,9 +198,13 @@ class ProtocolService(BaseService):
         Returns:
             domain_vo (object)
         """
+        protocol_id = params['protocol_id']
         domain_id = params['domain_id']
+
+        # Create Default Protocol if protocol is not exited
         self._create_default_protocol(domain_id)
-        return self.protocol_mgr.get_protocol(params['protocol_id'], domain_id, params.get('only'))
+
+        return self.protocol_mgr.get_protocol(protocol_id, domain_id, params.get('only'))
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['domain_id'])
@@ -222,8 +229,11 @@ class ProtocolService(BaseService):
             total_count (int)
         """
         domain_id = params['domain_id']
-        self._create_default_protocol(domain_id)
         query = params.get('query', {})
+
+        # Create Default Protocol if protocol is not exited
+        self._create_default_protocol(domain_id)
+
         return self.protocol_mgr.list_protocols(query)
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
@@ -292,7 +302,6 @@ class ProtocolService(BaseService):
     def _create_default_protocol(self, domain_id):
         query = {'domain_id': domain_id}
         protocol_vos, total_count = self.protocol_mgr.list_protocols(query)
-        # installed_protocols = [protocol_vo.name for protocol_vo in protocol_vos]
 
         installed_protocol_names = [protocol_vo.name for protocol_vo in protocol_vos]
 
@@ -302,5 +311,4 @@ class ProtocolService(BaseService):
                 default_protocol['domain_id'] = domain_id
                 self.protocol_mgr.create_protocol(default_protocol)
 
-        # self.protocol_mgr.create_default_protocols(installed_protocols, domain_id)
         return True
