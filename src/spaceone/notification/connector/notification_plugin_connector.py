@@ -23,9 +23,6 @@ class NotificationPluginConnector(BaseConnector):
             endpoint = static_endpoint
 
         e = parse_endpoint(endpoint)
-
-        _LOGGER.debug("----- Plugin Endpoint ----")
-        _LOGGER.debug(e)
         self.client = pygrpc.client(endpoint=f'{e.get("hostname")}:{e.get("port")}', version='plugin')
 
     def init(self, options):

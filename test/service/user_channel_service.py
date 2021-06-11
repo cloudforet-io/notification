@@ -94,6 +94,47 @@ class TestUserChannelService(unittest.TestCase):
     @patch.object(SecretConnector, '__init__', return_value=None)
     @patch.object(IdentityConnector, '__init__', return_value=None)
     @patch.object(IdentityConnector, 'get_user', return_value={'user_id': 'bluese05', 'name': 'JH Song'})
+    @patch.object(MongoModel, 'connect', return_value=None)
+    def test_create_user_channel_no_schedule(self, *args):
+        protocol_vo = ProtocolFactory(domain_id=self.domain_id)
+        protocol_id = protocol_vo.protocol_id
+
+        params = {
+            'name': 'Test User Channel',
+            'protocol_id': protocol_id,
+            'schema': 'slack_webhook',
+            'user_id': 'bluese05',
+            'data': {
+                'token': 'xxxxxx',
+                'channel': 'bob'
+            },
+            'is_scheduled': False,
+            'schedule': None,
+            'tags': {
+                utils.random_string(): utils.random_string()
+            },
+            'domain_id': self.domain_id
+        }
+
+        self.transaction.method = 'create'
+        user_ch_svc = UserChannelService(transaction=self.transaction)
+        user_ch_vo = user_ch_svc.create(params.copy())
+
+        print_data(user_ch_vo.to_dict(), 'test_create_project_channel')
+        UserChannelInfo(user_ch_vo)
+
+        self.assertIsInstance(user_ch_vo, UserChannel)
+        self.assertEqual(params['name'], user_ch_vo.name)
+        self.assertEqual(False, user_ch_vo.is_scheduled)
+        self.assertEqual(None, user_ch_vo.schedule)
+        self.assertEqual(False, user_ch_vo.is_subscribe)
+        self.assertEqual(None, user_ch_vo.secret_id)
+        self.assertEqual(params['tags'], user_ch_vo.tags)
+        self.assertEqual(params['domain_id'], user_ch_vo.domain_id)
+
+    @patch.object(SecretConnector, '__init__', return_value=None)
+    @patch.object(IdentityConnector, '__init__', return_value=None)
+    @patch.object(IdentityConnector, 'get_user', return_value={'user_id': 'bluese05', 'name': 'JH Song'})
     @patch.object(SecretConnector, 'create_secret', return_value={'secret_id': 'secret-xyz', 'name': 'Secret'})
     @patch.object(SecretConnector, 'update_secret', return_value={'secret_id': 'secret-xyz', 'name': 'Update Secret'})
     @patch.object(MongoModel, 'connect', return_value=None)
