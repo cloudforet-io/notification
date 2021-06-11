@@ -14,7 +14,7 @@ class UserChannel(MongoModel):
     is_subscribe = BooleanField(default=False)
     subscriptions = ListField(StringField(max_length=255), default=[])
     is_scheduled = BooleanField(default=False)
-    schedule = EmbeddedDocumentField(Schedule, default={})
+    schedule = EmbeddedDocumentField(Schedule, default=None, null=True)
     tags = DictField()
     secret_id = StringField(max_length=255)
     domain_id = StringField(max_length=255)
