@@ -1,6 +1,7 @@
 from spaceone.core import utils
 from spaceone.core.service import *
 from spaceone.notification.error import *
+from spaceone.notification.lib.schedule import *
 from spaceone.notification.manager import IdentityManager
 from spaceone.notification.manager import UserChannelManager
 from spaceone.notification.model import UserChannel
@@ -58,7 +59,7 @@ class UserChannelService(BaseService):
             params['subscriptions'] = []
 
         if is_scheduled:
-            self.validate_schedule(params.get('schedule', {}))
+            validate_schedule(params.get('schedule', {}))
         else:
             params['schedule'] = None
 
@@ -152,12 +153,12 @@ class UserChannelService(BaseService):
             user_channel_vo (object)
         """
 
-        user_channel_vo = self.user_channel_mgr.get_user_channel(params['project_channel_id'], params['domain_id'])
+        user_channel_vo = self.user_channel_mgr.get_user_channel(params['user_channel_id'], params['domain_id'])
 
         is_scheduled = params.get('is_scheduled', False)
 
         if is_scheduled:
-            self.validate_schedule(params.get('schedule', {}))
+            validate_schedule(params.get('schedule', {}))
         else:
             params.update({
                 'is_scheduled': False,
@@ -313,17 +314,3 @@ class UserChannelService(BaseService):
 
         query = params.get('query', {})
         return self.user_channel_mgr.stat_user_channels(query)
-
-    @staticmethod
-    def validate_schedule(schedule):
-        if 'day_of_week' not in schedule:
-            raise ERROR_REQUIRED_PARAMETER(key='schedule.day_of_week')
-
-        if 'start_hour' not in schedule:
-            schedule.update({'start_hour': 0})
-
-        if 'end_hour' not in schedule:
-            schedule.update({'end_hour': 0})
-
-        if schedule['start_hour'] > schedule['end_hour']:
-            raise ERROR_WRONG_SCHEDULE_HOURS_SETTINGS(start_hour=schedule['start_hour'], end_hour=schedule['end_hour'])

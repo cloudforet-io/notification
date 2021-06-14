@@ -27,7 +27,7 @@ class ProtocolFactory(factory.mongoengine.MongoEngineFactory):
 
     resource_type = 'identity.User'
     capability = {
-        'data_type': 'PLAIN_TEXT',
+        'data_type': 'SECRET',
         'supported_schema': [
             'slack_webhook'
         ]

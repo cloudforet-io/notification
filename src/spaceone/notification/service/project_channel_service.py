@@ -1,6 +1,7 @@
 from spaceone.core import utils
 from spaceone.core.service import *
 from spaceone.notification.error import *
+from spaceone.notification.lib.schedule import *
 from spaceone.notification.manager import IdentityManager
 from spaceone.notification.manager import ProtocolManager
 from spaceone.notification.manager import ProjectChannelManager
@@ -26,7 +27,6 @@ class ProjectChannelService(BaseService):
     def create(self, params):
 
         """ Create Project Channel
-
         Args:
             params (dict): {
                 'protocol_id': 'str',
@@ -45,8 +45,8 @@ class ProjectChannelService(BaseService):
 
         Returns:
             project_channel_vo (object)
-
         """
+
         protocol_id = params['protocol_id']
         domain_id = params['domain_id']
         data = params['data']
@@ -59,7 +59,7 @@ class ProjectChannelService(BaseService):
             params['subscriptions'] = []
 
         if is_scheduled:
-            self.validate_schedule(params.get('schedule', {}))
+            validate_schedule(params.get('schedule', {}))
         else:
             params['schedule'] = None
 
@@ -161,7 +161,7 @@ class ProjectChannelService(BaseService):
         is_scheduled = params.get('is_scheduled', False)
 
         if is_scheduled:
-            self.validate_schedule(params.get('schedule', {}))
+            validate_schedule(params.get('schedule', {}))
         else:
             params.update({
                 'is_scheduled': False,
@@ -327,17 +327,3 @@ class ProjectChannelService(BaseService):
         """
         query = params.get('query', {})
         return self.project_channel_mgr.stat_project_channels(query)
-
-    @staticmethod
-    def validate_schedule(schedule):
-        if 'day_of_week' not in schedule:
-            raise ERROR_REQUIRED_PARAMETER(key='schedule.day_of_week')
-
-        if 'start_hour' not in schedule:
-            schedule.update({'start_hour': 0})
-
-        if 'end_hour' not in schedule:
-            schedule.update({'end_hour': 0})
-
-        if schedule['start_hour'] > schedule['end_hour']:
-            raise ERROR_WRONG_SCHEDULE_HOURS_SETTINGS(start_hour=schedule['start_hour'], end_hour=schedule['end_hour'])

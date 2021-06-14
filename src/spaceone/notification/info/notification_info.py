@@ -18,16 +18,12 @@ def NotificationInfo(notification_vo: Notification, minimal=False):
 
     if not minimal:
 
-        if notification_vo.project_id:
-            info.update({'project_id': notification_vo.project_id})
-
         if notification_vo.user_id:
             info.update({'user_id': notification_vo.user_id})
 
         info.update({
             'is_read': notification_vo.is_read,
             'created_at': utils.datetime_to_iso8601(notification_vo.created_at),
-            'parent_notification_id': notification_vo.parent_notification_id,
             'domain_id': notification_vo.domain_id
         })
 

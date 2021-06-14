@@ -9,8 +9,6 @@ class Notification(MongoModel):
     notification_type = StringField(max_length=20, default='INFO')
     notification_level = StringField(max_length=40, default='ALL')
     is_read = BooleanField(default=False)
-    parent_notification_id = StringField(max_length=40, null=True, default=None)
-    project_id = StringField(max_length=255)
     user_id = StringField(max_length=60)
     domain_id = StringField(max_length=40)
     created_at = DateTimeField(auto_now_add=True)
