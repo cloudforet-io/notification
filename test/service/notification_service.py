@@ -146,7 +146,7 @@ class TestProtocolService(unittest.TestCase):
         self.assertIsNone(result)
 
     @patch.object(MongoModel, 'connect', return_value=None)
-    def test_get_protocol(self, *args):
+    def test_get_notification(self, *args):
         notification_vo = NotificationFactory(domain_id=self.domain_id)
 
         params = {
@@ -158,11 +158,32 @@ class TestProtocolService(unittest.TestCase):
         notification_svc = NotificationService(transaction=self.transaction)
         get_noti_vo = notification_svc.get(params)
 
-        print_data(get_noti_vo.to_dict(), 'test_get_protocol')
+        print_data(get_noti_vo.to_dict(), 'test_get_notification')
         NotificationInfo(get_noti_vo)
 
         self.assertIsInstance(get_noti_vo, Notification)
         self.assertEqual(get_noti_vo.notification_id, notification_vo.notification_id)
+
+    @patch.object(MongoModel, 'connect', return_value=None)
+    def test_get_notification_with_set_read(self, *args):
+        notification_vo = NotificationFactory(domain_id=self.domain_id)
+
+        params = {
+            'notification_id': notification_vo.notification_id,
+            'set_read': True,
+            'domain_id': self.domain_id
+        }
+
+        self.transaction.method = 'get'
+        notification_svc = NotificationService(transaction=self.transaction)
+        get_noti_vo = notification_svc.get(params)
+
+        print_data(get_noti_vo.to_dict(), 'test_get_notification_with_set_read')
+        NotificationInfo(get_noti_vo)
+
+        self.assertIsInstance(get_noti_vo, Notification)
+        self.assertEqual(get_noti_vo.notification_id, notification_vo.notification_id)
+        self.assertEqual(get_noti_vo.is_read, True)
 
     @patch.object(MongoModel, 'connect', return_value=None)
     def test_list_notifications_by_notification_id(self, *args):
@@ -184,7 +205,7 @@ class TestProtocolService(unittest.TestCase):
         self.assertEqual(total_count, 1)
 
     @patch.object(MongoModel, 'connect', return_value=None)
-    def test_list_protocols_by_name(self, *args):
+    def test_list_notifications_by_name(self, *args):
         notification_topic_x_vos = NotificationFactory.build_batch(10, topic='topic-x', domain_id=self.domain_id)
         list(map(lambda vo: vo.save(), notification_topic_x_vos))
 
@@ -230,7 +251,7 @@ class TestProtocolService(unittest.TestCase):
         self.assertEqual(total_count, 10)
 
     @patch.object(MongoModel, 'connect', return_value=None)
-    def test_stat_protocol(self, *args):
+    def test_stat_notification(self, *args):
         notification_vos = NotificationFactory.build_batch(10, domain_id=self.domain_id)
         list(map(lambda vo: vo.save(), notification_vos))
 
@@ -262,10 +283,10 @@ class TestProtocolService(unittest.TestCase):
         values = noti_svc.stat(params)
         StatisticsInfo(values)
 
-        print_data(values, 'test_stat_protocol')
+        print_data(values, 'test_stat_notification')
 
     @patch.object(MongoModel, 'connect', return_value=None)
-    def test_stat_protocol_distinct(self, *args):
+    def test_stat_notification_distinct(self, *args):
         notification_vos = NotificationFactory.build_batch(10, domain_id=self.domain_id)
         list(map(lambda vo: vo.save(), notification_vos))
 
@@ -285,7 +306,7 @@ class TestProtocolService(unittest.TestCase):
         values = notification_svc.stat(params)
         StatisticsInfo(values)
 
-        print_data(values, 'test_stat_protocol_distinct')
+        print_data(values, 'test_stat_notification_distinct')
 
 
 if __name__ == "__main__":
