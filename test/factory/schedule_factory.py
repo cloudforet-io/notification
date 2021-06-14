@@ -9,4 +9,4 @@ class ScheduleFactory(factory.mongoengine.MongoEngineFactory):
 
     day_of_week = ['MON', 'WED', 'FRI']
     start_hour = 8
-    end_hour = 19
+    end_hour = 23

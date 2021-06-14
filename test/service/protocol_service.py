@@ -29,7 +29,7 @@ class TestProtocolService(unittest.TestCase):
 
         cls.domain_id = utils.generate_id('domain')
         cls.transaction = Transaction({
-            'service': 'notificaiton',
+            'service': 'notification',
             'api_class': 'Protocol'
         })
         super().setUpClass()
@@ -132,7 +132,6 @@ class TestProtocolService(unittest.TestCase):
                                                        mock_get_plugin, *args):
         plugin_id = utils.generate_id('plugin')
         plugin_version = '1.0'
-
         mock_plugin_init.return_value = {
             'metadata': {
                 'supported_resource_type': ['inventory.Server', 'inventory.CloudService'],
@@ -140,7 +139,6 @@ class TestProtocolService(unittest.TestCase):
                 'required_keys': ['reference.resource_id']
             }
         }
-
         mock_list_secrets.return_value = {
             'results': [{
                 'secret_id': utils.generate_id('secret'),
@@ -148,7 +146,6 @@ class TestProtocolService(unittest.TestCase):
             }],
             'total_count': 1
         }
-
         mock_get_plugin.return_value = {
             'capability': {
                 'use_resource_secret': True,
@@ -157,7 +154,6 @@ class TestProtocolService(unittest.TestCase):
             },
             'provider': 'aws'
         }
-
         params = {
             'name': 'AWS CloudWatch',
             'plugin_info': {
@@ -171,14 +167,11 @@ class TestProtocolService(unittest.TestCase):
             },
             'domain_id': self.domain_id
         }
-
         self.transaction.method = 'register'
         data_source_svc = DataSourceService(transaction=self.transaction)
         data_source_vo = data_source_svc.register(params.copy())
-
         print_data(data_source_vo.to_dict(), 'test_register_metric_data_source_with_provider')
         DataSourceInfo(data_source_vo)
-
         self.assertIsInstance(data_source_vo, DataSource)
         self.assertEqual(params['name'], data_source_vo.name)
         self.assertEqual(params['tags'], utils.tags_to_dict(data_source_vo.tags))
@@ -394,7 +387,6 @@ class TestProtocolService(unittest.TestCase):
         ProtocolFactory(tags={'xxxxx': 'aaaaaa', 'yyyyy': 'bbbbbb'}, domain_id=self.domain_id)
         protocol_vos = ProtocolFactory.build_batch(9, domain_id=self.domain_id)
         list(map(lambda vo: vo.save(), protocol_vos))
-
         params = {
             'query': {
                 'filter': [{
@@ -405,15 +397,12 @@ class TestProtocolService(unittest.TestCase):
             },
             'domain_id': self.domain_id
         }
-
         for protocol_vo in protocol_vos:
             print(protocol_vo.tags)
-
         self.transaction.method = 'list'
         protocol_svc = ProtocolService(transaction=self.transaction)
         protocol_vos, total_count = protocol_svc.list(params)
         ProtocolsInfo(protocol_vos, total_count)
-
         self.assertEqual(len(protocol_vos), 1)
         self.assertIsInstance(protocol_vos[0], Protocol)
         self.assertEqual(total_count, 1)
