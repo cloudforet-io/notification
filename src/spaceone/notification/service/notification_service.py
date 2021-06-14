@@ -122,16 +122,21 @@ class NotificationService(BaseService):
         Args:
             params (dict): {
                 'domain_id': 'str',
-                'only': 'list'
+                'only': 'list',
+                'set_read': 'bool'
             }
 
         Returns:
             notification_vo (object)
         """
 
-        return self.notification_mgr.get_notification(params['notification_id'],
-                                                      params['domain_id'],
-                                                      params.get('only'))
+        notification_vo = self.notification_mgr.get_notification(params['notification_id'], params['domain_id'],
+                                                                 params.get('only'))
+
+        if params.get('set_read', False) and notification_vo.is_read is False:
+            self.notification_mgr.set_read_notification(notification_vo)
+
+        return notification_vo
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['domain_id'])
@@ -150,6 +155,7 @@ class NotificationService(BaseService):
                 'secret_id': 'str',
                 'protocol_id': 'str',
                 'user_id': 'str',
+                'set_read': 'bool',
                 'query': 'dict (spaceone.api.core.v1.Query)',
                 'domain_id': 'str'
             }
@@ -160,7 +166,10 @@ class NotificationService(BaseService):
         """
 
         query = params.get('query', {})
-        return self.notification_mgr.list_notifications(query)
+        notification_vos, total_count = self.notification_mgr.list_notifications(query)
+
+        # TODO: update is_read when set_read is True
+        return notification_vos, total_count
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['query', 'domain_id'])
