@@ -259,6 +259,65 @@ class TestUserChannelService(unittest.TestCase):
     @patch.object(SecretConnector, '__init__', return_value=None)
     @patch.object(IdentityConnector, '__init__', return_value=None)
     @patch.object(MongoModel, 'connect', return_value=None)
+    def test_set_schedule(self, *args):
+        user_channel_vo = UserChannelFactory(domain_id=self.domain_id, secret_id='secret-xyz',
+                                             is_scheduled=False, schedule=None)
+
+        schedule = {
+            'day_of_week': ['MON', 'TUE'],
+            'start_hour': 1,
+            'end_hour': 23
+        }
+
+        params = {
+            'user_channel_id': user_channel_vo.user_channel_id,
+            'is_scheduled': True,
+            'schedule': schedule,
+            'domain_id': self.domain_id
+        }
+
+        self.transaction.method = 'set_schedule'
+        user_ch_svc = UserChannelService(transaction=self.transaction)
+        schedule_user_ch_vo = user_ch_svc.set_schedule(params.copy())
+
+        print_data(schedule_user_ch_vo.to_dict(), 'test_set_schedule')
+        UserChannelInfo(schedule_user_ch_vo)
+
+        self.assertIsInstance(schedule_user_ch_vo, UserChannel)
+        self.assertEqual(schedule_user_ch_vo.is_scheduled, True)
+        self.assertEqual(schedule['day_of_week'], schedule_user_ch_vo.schedule.day_of_week)
+        self.assertEqual(schedule['start_hour'], schedule_user_ch_vo.schedule.start_hour)
+        self.assertEqual(schedule['end_hour'], schedule_user_ch_vo.schedule.end_hour)
+
+    @patch.object(SecretConnector, '__init__', return_value=None)
+    @patch.object(IdentityConnector, '__init__', return_value=None)
+    @patch.object(MongoModel, 'connect', return_value=None)
+    def test_set_subscription(self, *args):
+        user_channel_vo = UserChannelFactory(domain_id=self.domain_id, secret_id='secret-xyz',
+                                             is_subscribe=False, subscriptions=[])
+        subscriptions = ['a', 'b', 'c']
+
+        params = {
+            'user_channel_id': user_channel_vo.user_channel_id,
+            'is_subscribe': True,
+            'subscriptions': subscriptions,
+            'domain_id': self.domain_id
+        }
+
+        self.transaction.method = 'set_schedule'
+        user_ch_svc = UserChannelService(transaction=self.transaction)
+        subscription_user_ch_vo = user_ch_svc.set_schedule(params.copy())
+
+        print_data(subscription_user_ch_vo.to_dict(), 'test_set_subscription')
+        UserChannelInfo(subscription_user_ch_vo)
+
+        self.assertIsInstance(subscription_user_ch_vo, UserChannel)
+        self.assertEqual(subscription_user_ch_vo.is_subscribe, True)
+        self.assertEqual(subscriptions, subscription_user_ch_vo.subscriptions)
+
+    @patch.object(SecretConnector, '__init__', return_value=None)
+    @patch.object(IdentityConnector, '__init__', return_value=None)
+    @patch.object(MongoModel, 'connect', return_value=None)
     def test_enable_user_channel(self, *args):
         user_channel_vo = UserChannelFactory(domain_id=self.domain_id, state='DISABLED')
         params = {
