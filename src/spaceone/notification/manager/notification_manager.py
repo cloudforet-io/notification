@@ -25,6 +25,14 @@ class NotificationManager(BaseManager):
 
         return notification_vo
 
+    def set_read_notification(self, notification_vo):
+        def _rollback(old_data):
+            _LOGGER.info(f'[set_read_notification._rollback]')
+            notification_vo.update({'is_read': False})
+
+        self.transaction.add_rollback(_rollback, notification_vo.to_dict())
+        return notification_vo.update({'is_read': True})
+
     def delete_notification(self, notification_id, domain_id):
         notification_vo: Notification = self.get_notification(notification_id, domain_id)
         notification_vo.delete()
