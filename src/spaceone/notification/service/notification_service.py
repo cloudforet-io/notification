@@ -187,18 +187,22 @@ class NotificationService(BaseService):
         plugin_mgr: PluginManager = self.locator.get_manager('PluginManager')
 
         protocol_vo = protocol_mgr.get_protocol(channel_vo.protocol_id, domain_id)
-        capability = protocol_vo.capability
-        plugin_info = protocol_vo.plugin_info
-        secret_data = {}
 
-        if capability['data_type'] == 'PLAIN_TEXT':
-            secret_data = channel_vo.data
-        elif capability['data_type'] == 'SECRET':
-            secret_mgr: SecretManager = self.locator.get_manager('SecretManager')
-            secret_data = secret_mgr.get_plugin_secret_data(channel_vo.secret_id, capability['supported_schema'],
-                                                            domain_id)
+        if protocol_vo.state == 'ENABLED':
+            capability = protocol_vo.capability
+            plugin_info = protocol_vo.plugin_info
+            secret_data = {}
 
-        plugin_mgr.dispatch_notification(secret_data, notification_type, message, plugin_info.options)
+            if capability['data_type'] == 'PLAIN_TEXT':
+                secret_data = channel_vo.data
+            elif capability['data_type'] == 'SECRET':
+                secret_mgr: SecretManager = self.locator.get_manager('SecretManager')
+                secret_data = secret_mgr.get_plugin_secret_data(channel_vo.secret_id, capability['supported_schema'],
+                                                                domain_id)
+
+            plugin_mgr.dispatch_notification(secret_data, notification_type, message, plugin_info.options)
+        else:
+            _LOGGER.info('[Notification] Protocol is disabled. skip notification')
 
     @staticmethod
     def check_schedule_for_dispatch(is_scheduled, schedule):
