@@ -140,7 +140,7 @@ class ProjectChannelService(BaseService):
         return self.project_channel_mgr.update_project_channel_by_vo(params, project_channel_vo)
 
     @transaction(append_meta={'authorization.scope': 'PROJECT'})
-    @check_required(['project_channel_id', 'domain_id'])
+    @check_required(['project_channel_id', 'is_scheduled', 'domain_id'])
     def set_schedule(self, params):
         """ Set schedule for Project Channel
 
