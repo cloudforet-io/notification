@@ -19,6 +19,12 @@ class Protocol(BaseAPI, protocol_pb2_grpc.ProtocolServicer):
         with self.locator.get_service('ProtocolService', metadata) as protocol_svc:
             return self.locator.get_info('ProtocolInfo', protocol_svc.update(params))
 
+    def update_plugin(self, request, context):
+        params, metadata = self.parse_request(request, context)
+
+        with self.locator.get_service('ProtocolService', metadata) as protocol_svc:
+            return self.locator.get_info('ProtocolInfo', protocol_svc.update_plugin(params))
+
     def delete(self, request, context):
         params, metadata = self.parse_request(request, context)
 
