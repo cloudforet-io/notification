@@ -16,6 +16,9 @@ class RepositoryManager(BaseManager):
     def get_plugin(self, plugin_id, domain_id):
         return self.repo_connector.get_plugin(plugin_id, domain_id)
 
+    def get_schema(self, schema_name, domain_id):
+        return self.repo_connector.get_schema(schema_name, domain_id)
+
     def check_plugin_version(self, plugin_id, version, domain_id):
         versions = self.repo_connector.get_plugin_versions(plugin_id, domain_id)
 
