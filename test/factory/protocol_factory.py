@@ -12,7 +12,10 @@ class PluginInfoFactory(factory.mongoengine.MongoEngineFactory):
     plugin_id = factory.LazyAttribute(lambda o: utils.generate_id('plugin'))
     version = '1.0'
     options = {}
-    metadata = {}
+    metadata = {
+        'data_type': 'PLAIN_TEXT'
+    }
+    secret_id = utils.generate_id('secret')
 
 
 class ProtocolFactory(factory.mongoengine.MongoEngineFactory):
@@ -27,7 +30,6 @@ class ProtocolFactory(factory.mongoengine.MongoEngineFactory):
 
     resource_type = 'identity.User'
     capability = {
-        'data_type': 'SECRET',
         'supported_schema': [
             'slack_webhook'
         ]
