@@ -137,7 +137,7 @@ class UserChannelService(BaseService):
         return self.user_channel_mgr.update_user_channel_by_vo(params, user_channel_vo)
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
-    @check_required(['user_channel_id', 'is_scheduled', 'domain_id'])
+    @check_required(['user_channel_id', 'domain_id'])
     def set_schedule(self, params):
         """
             set_schedule
