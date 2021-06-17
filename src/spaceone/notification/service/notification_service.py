@@ -70,6 +70,9 @@ class NotificationService(BaseService):
                 dispatch_notification_level = self.check_notification_level_for_dispatch(notification_level,
                                                                                          prj_ch_vo.notification_level)
 
+                _LOGGER.debug(f'[Notification] subscribe: {dispatch_subscribe} | schedule: {dispatch_schedule} '
+                              f'| notification_level: {dispatch_notification_level}')
+
                 if dispatch_subscribe and dispatch_schedule and dispatch_notification_level:
                     _LOGGER.info('[Notification] Dispatch Notificaiton to project')
                     self.dispatch_notification(prj_ch_vo, notification_type, message, domain_id)
@@ -194,6 +197,7 @@ class NotificationService(BaseService):
     def dispatch_notification(self, channel_vo, notification_type, message, domain_id):
         protocol_mgr: ProtocolManager = self.locator.get_manager('ProtocolManager')
         plugin_mgr: PluginManager = self.locator.get_manager('PluginManager')
+        secret_mgr: SecretManager = self.locator.get_manager('SecretManager')
 
         protocol_vo = protocol_mgr.get_protocol(channel_vo.protocol_id, domain_id)
 
@@ -201,15 +205,18 @@ class NotificationService(BaseService):
             capability = protocol_vo.capability
             plugin_info = protocol_vo.plugin_info
             secret_data = {}
+            channel_data = {}
 
-            if capability['data_type'] == 'PLAIN_TEXT':
-                secret_data = channel_vo.data
-            elif capability['data_type'] == 'SECRET':
-                secret_mgr: SecretManager = self.locator.get_manager('SecretManager')
-                secret_data = secret_mgr.get_plugin_secret_data(channel_vo.secret_id, capability['supported_schema'],
-                                                                domain_id)
+            if secret_id := plugin_info.secret_id:
+                secret_data = secret_mgr.get_plugin_secret_data(secret_id, plugin_info.schema, domain_id)
 
-            plugin_mgr.dispatch_notification(secret_data, notification_type, message, plugin_info.options)
+            if plugin_info.metadata['data_type'] == 'PLAIN_TEXT':
+                channel_data = channel_vo.data
+            elif plugin_info.metadata['data_type'] == 'SECRET':
+                channel_data = secret_mgr.get_plugin_secret_data(channel_vo.secret_id, capability['supported_schema'],
+                                                                 domain_id)
+
+            plugin_mgr.dispatch_notification(secret_data, channel_data, notification_type, message, plugin_info.options)
         else:
             _LOGGER.info('[Notification] Protocol is disabled. skip notification')
 

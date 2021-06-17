@@ -7,6 +7,8 @@ class PluginInfo(EmbeddedDocument):
     version = StringField(max_length=255)
     options = DictField(default={})
     metadata = DictField(default={})
+    secret_id = StringField(max_length=40)
+    schema = StringField(max_length=255)
 
 
 class Protocol(MongoModel):

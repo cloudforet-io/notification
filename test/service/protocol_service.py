@@ -49,6 +49,7 @@ class TestProtocolService(unittest.TestCase):
     @patch.object(MongoModel, 'connect', return_value=None)
     @patch.object(RepositoryConnector, '__init__', return_value=None)
     @patch.object(SecretConnector, '__init__', return_value=None)
+    @patch.object(SecretConnector, 'create_secret', return_value={'secret_id': 'secret-xyz', 'name': 'Secret'})
     @patch.object(PluginConnector, '__init__', return_value=None)
     @patch.object(PluginConnector, 'get_plugin_endpoint', return_value='grpc://plugin.spaceone.dev:50051')
     @patch.object(NotificationPluginConnector, 'initialize', return_value=None)
@@ -64,8 +65,8 @@ class TestProtocolService(unittest.TestCase):
 
         mock_plugin_verify.return_value = {
             'metadata': {
-                'supported_schema': ['slack_webhook', 'spaceone_user'],
-                'data_type': 'PLAIN_TEXT'
+                'data_type': 'PLAIN_TEXT',
+                'data': {}
             }
         }
 
@@ -83,7 +84,7 @@ class TestProtocolService(unittest.TestCase):
             'image': 'pyengine/notification-slack-protocol',
             'capability': {
                 'supported_schema': ['slack_webhook', 'spaceone_user'],
-                'data_type': 'PLAIN_TEXT'
+                'data_type': 'SECRET'
             },
             'tags': {
                 'description': 'Notification Slack Protocol',
@@ -97,6 +98,11 @@ class TestProtocolService(unittest.TestCase):
                 'plugin_id': plugin_id,
                 'version': plugin_version,
                 'options': {},
+                'secret_data': {
+                    'a': 'b',
+                    'c': 'd'
+                },
+                'schema': 'slack_webhook'
             },
             'tags': {
                 utils.random_string(): utils.random_string()
@@ -115,68 +121,6 @@ class TestProtocolService(unittest.TestCase):
         self.assertEqual(params['name'], protocol_vo.name)
         self.assertEqual(params['tags'], protocol_vo.tags)
         self.assertEqual(params['domain_id'], protocol_vo.domain_id)
-
-    '''
-    @patch.object(MongoModel, 'connect', return_value=None)
-    @patch.object(RepositoryConnector, '__init__', return_value=None)
-    @patch.object(SecretConnector, '__init__', return_value=None)
-    @patch.object(PluginConnector, '__init__', return_value=None)
-    @patch.object(PluginConnector, 'get_plugin_endpoint', return_value='grpc://plugin.spaceone.dev:50051')
-    @patch.object(MonitoringPluginConnector, 'initialize', return_value=None)
-    @patch.object(SecretConnector, 'get_secret_data', return_value={'data': {}})
-    @patch.object(RepositoryConnector, 'get_plugin_versions', return_value=['1.0', '1.1', '1.2'])
-    @patch.object(RepositoryConnector, 'get_plugin')
-    @patch.object(SecretConnector, 'list_secrets')
-    @patch.object(MonitoringPluginConnector, 'init')
-    def test_register_metric_data_source_with_provider(self, mock_plugin_init, mock_list_secrets,
-                                                       mock_get_plugin, *args):
-        plugin_id = utils.generate_id('plugin')
-        plugin_version = '1.0'
-        mock_plugin_init.return_value = {
-            'metadata': {
-                'supported_resource_type': ['inventory.Server', 'inventory.CloudService'],
-                'supported_stat': ['AVERAGE', 'MAX', 'MIN'],
-                'required_keys': ['reference.resource_id']
-            }
-        }
-        mock_list_secrets.return_value = {
-            'results': [{
-                'secret_id': utils.generate_id('secret'),
-                'schema': 'aws_access_key'
-            }],
-            'total_count': 1
-        }
-        mock_get_plugin.return_value = {
-            'capability': {
-                'use_resource_secret': True,
-                'supported_schema': ['aws_access_key', 'aws_assume_role'],
-                'monitoring_type': 'METRIC'
-            },
-            'provider': 'aws'
-        }
-        params = {
-            'name': 'AWS CloudWatch',
-            'plugin_info': {
-                'plugin_id': plugin_id,
-                'version': plugin_version,
-                'options': {},
-                'provider': 'aws'
-            },
-            'tags': {
-                'tag_key': 'tag_value'
-            },
-            'domain_id': self.domain_id
-        }
-        self.transaction.method = 'register'
-        data_source_svc = DataSourceService(transaction=self.transaction)
-        data_source_vo = data_source_svc.register(params.copy())
-        print_data(data_source_vo.to_dict(), 'test_register_metric_data_source_with_provider')
-        DataSourceInfo(data_source_vo)
-        self.assertIsInstance(data_source_vo, DataSource)
-        self.assertEqual(params['name'], data_source_vo.name)
-        self.assertEqual(params['tags'], utils.tags_to_dict(data_source_vo.tags))
-        self.assertEqual(params['domain_id'], data_source_vo.domain_id)
-    '''
 
     @patch.object(MongoModel, 'connect', return_value=None)
     def test_update_protocol(self, *args):

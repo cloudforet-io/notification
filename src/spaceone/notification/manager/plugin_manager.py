@@ -30,5 +30,6 @@ class PluginManager(BaseManager):
     def verify_plugin(self, options, secret_data):
         self.noti_plugin_connector.verify(options, secret_data)
 
-    def dispatch_notification(self, secret_data, notification_type, message, options):
-        return self.noti_plugin_connector.dispatch_notification(secret_data, notification_type, message, options)
+    def dispatch_notification(self, secret_data, channel_data, notification_type, message, options):
+        return self.noti_plugin_connector.dispatch_notification(secret_data, channel_data, notification_type,
+                                                                message, options)

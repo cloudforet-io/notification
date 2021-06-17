@@ -1,6 +1,6 @@
 import logging
 from spaceone.core import cache
-
+from spaceone.core import utils
 from spaceone.core.service import *
 from spaceone.notification.error import *
 from spaceone.notification.manager import RepositoryManager
@@ -8,6 +8,7 @@ from spaceone.notification.manager import ProtocolManager
 from spaceone.notification.manager import PluginManager
 from spaceone.notification.manager import ProjectChannelManager
 from spaceone.notification.manager import UserChannelManager
+from spaceone.notification.manager import SecretManager
 from spaceone.notification.model import Protocol
 from spaceone.notification.conf.protocol_conf import DEFAULT_PROTOCOLS
 
@@ -41,17 +42,46 @@ class ProtocolService(BaseService):
             protocol_vo (object)
         """
         domain_id = params['domain_id']
+        plugin_info = params['plugin_info']
 
-        self._check_plugin_info(params['plugin_info'])
-        plugin = self._get_plugin(params['plugin_info'], domain_id)
+        self._check_plugin_info(plugin_info)
+        _plugin = self._get_plugin(plugin_info, domain_id)
+        plugin_capability = _plugin.get('capability', {})
 
-        params['capability'] = plugin.get('capability', {})
-        self._check_plugin_capability(params['capability'])
+        if 'supported_schema' in plugin_capability:
+            params['capability'] = {'supported_schema': plugin_capability['supported_schema']}
+        else:
+            raise ERROR_WRONG_PLUGIN_SETTINGS(key='capability.supported_schema')
 
         _LOGGER.debug(f'[create] capability: {params["capability"]}')
         _LOGGER.debug(f'[create] name: {params["name"]}')
 
-        self._init_plugin(params['plugin_info'], domain_id)
+        request_plugin = {
+            'plugin_id': plugin_info['plugin_id'],
+            'version': plugin_info['plugin_id'],
+            'options': plugin_info['options'],
+        }
+
+        plugin_metadata = self._init_plugin(plugin_info, domain_id)
+        request_plugin.update({'metadata': plugin_metadata})
+
+        if 'secret_data' in plugin_info:
+            secret_mgr: SecretManager = self.locator.get_manager('SecretManager')
+            secret_params = {
+                'name': utils.generate_id('secret-noti-proto', 4),
+                'secret_type': 'CREDENTIALS',
+                'data': plugin_info['secret_data'],
+                'schema': plugin_info['schema'],
+                'domain_id': domain_id
+            }
+
+            protocol_secret = secret_mgr.create_secret(secret_params)
+            request_plugin.update({
+                'secret_id': protocol_secret['secret_id'],
+                'schema': plugin_info['schema']
+            })
+
+        params['plugin_info'] = request_plugin
         protocol_vo: Protocol = self.protocol_mgr.create_protocol(params)
 
         return protocol_vo
@@ -278,16 +308,17 @@ class ProtocolService(BaseService):
 
         return plugin_mgr.init_plugin(options)
 
-    @staticmethod
-    def _check_plugin_capability(capability):
-        if 'data_type' not in capability:
-            raise ERROR_WRONG_PLUGIN_SETTINGS(key='capability.data_type')
-        else:
-            if capability['data_type'] not in ['PLAIN_TEXT', 'SECRET']:
-                raise ERROR_WRONG_PLUGIN_SETTINGS(key='capability.data_type')
+    def check_existed_channel_using_protocol(self, protocol_vo):
+        project_channel_mgr: ProjectChannelManager = self.locator.get_manager('ProjectChannelManager')
+        user_channel_mgr: UserChannelManager = self.locator.get_manager('UserChannelManager')
 
-        if 'supported_schema' not in capability:
-            raise ERROR_WRONG_PLUGIN_SETTINGS(key='capability.supported_schema')
+        query = {'filter': [{'k': 'protocol_id', 'v': protocol_vo.protocol_id, 'o': 'eq'}]}
+
+        project_channel_vos, prj_ch_total_count = project_channel_mgr.list_project_channels(query)
+        user_channel_vos, user_ch_total_count = user_channel_mgr.list_user_channels(query)
+
+        if prj_ch_total_count > 0 or user_ch_total_count > 0:
+            raise EROR_DELETE_PROJECT_EXITED_CHANNEL(protocol_id=protocol_vo.protocol_id)
 
     @staticmethod
     def _check_plugin_info(plugin_info_params):
@@ -299,6 +330,9 @@ class ProtocolService(BaseService):
 
         if 'options' not in plugin_info_params:
             raise ERROR_REQUIRED_PARAMETER(key='plugin_info.options')
+
+        if 'secret_data' in plugin_info_params and 'schema' not in plugin_info_params:
+            raise ERROR_REQUIRED_PARAMETER(key='plugin_info.schema')
 
     @cache.cacheable(key='default-protocol:{domain_id}', expire=300)
     def _create_default_protocol(self, domain_id):
@@ -314,15 +348,3 @@ class ProtocolService(BaseService):
                 self.protocol_mgr.create_protocol(default_protocol)
 
         return True
-
-    def check_existed_channel_using_protocol(self, protocol_vo):
-        project_channel_mgr: ProjectChannelManager = self.locator.get_manager('ProjectChannelManager')
-        user_channel_mgr: UserChannelManager = self.locator.get_manager('UserChannelManager')
-
-        query = {'filter': [{'k': 'protocol_id', 'v': protocol_vo.protocol_id, 'o': 'eq'}]}
-
-        project_channel_vos, prj_ch_total_count = project_channel_mgr.list_project_channels(query)
-        user_channel_vos, user_ch_total_count = user_channel_mgr.list_user_channels(query)
-
-        if prj_ch_total_count > 0 or user_ch_total_count > 0:
-            raise EROR_DELETE_PROJECT_EXITED_CHANNEL(protocol_id=protocol_vo.protocol_id)

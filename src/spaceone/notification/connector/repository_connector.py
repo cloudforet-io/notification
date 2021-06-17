@@ -48,6 +48,14 @@ class RepositoryConnector(BaseConnector):
         data = self._change_message(response)
         return data['results']
 
+    def get_schema(self, schema_name, domain_id):
+        response = self.client.Schema.get({
+            'name': schema_name,
+            'domain_id': domain_id
+        }, metadata=self.transaction.get_connection_meta())
+
+        return self._change_message(response)
+
     @staticmethod
     def _change_message(message):
         return MessageToDict(message, preserving_proto_field_name=True)
