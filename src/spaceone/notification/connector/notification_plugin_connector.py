@@ -40,9 +40,10 @@ class NotificationPluginConnector(BaseConnector):
 
         self.client.Protocol.verify(params, metadata=self.transaction.get_connection_meta())
 
-    def dispatch_notification(self, secret_data, notification_type, message, options={}):
+    def dispatch_notification(self, secret_data, channel_data, notification_type, message, options={}):
         params = {
             'secret_data': secret_data,
+            'channel_data': channel_data,
             'notification_type': notification_type,
             'message': message,
             'options': options,
