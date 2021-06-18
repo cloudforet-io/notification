@@ -58,7 +58,7 @@ class ProtocolService(BaseService):
 
         request_plugin = {
             'plugin_id': plugin_info['plugin_id'],
-            'version': plugin_info['plugin_id'],
+            'version': plugin_info['version'],
             'options': plugin_info['options'],
         }
 
