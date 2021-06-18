@@ -15,7 +15,6 @@ class UserChannelFactory(factory.mongoengine.MongoEngineFactory):
     name = factory.LazyAttribute(lambda o: utils.random_string())
 
     state = 'ENABLED'
-    schema = 'slack_webhook'
     data = {
         'token': utils.random_string(),
         'channel': 'everyone'

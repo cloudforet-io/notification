@@ -29,11 +29,7 @@ class ProtocolFactory(factory.mongoengine.MongoEngineFactory):
     protocol_type = 'EXTERNAL'
 
     resource_type = 'identity.User'
-    capability = {
-        'supported_schema': [
-            'slack_webhook'
-        ]
-    }
+    capability = {'supported_schema': ['slack_webhook']}
 
     plugin_info = factory.SubFactory(PluginInfoFactory)
 
