@@ -4,11 +4,8 @@ def validate_schedule(schedule):
     if 'day_of_week' not in schedule:
         raise ERROR_REQUIRED_PARAMETER(key='schedule.day_of_week')
 
-    if 'start_hour' not in schedule:
-        raise ERROR_REQUIRED_PARAMETER(key='schedule.start_hour')
-
-    if 'end_hour' not in schedule:
-        raise ERROR_REQUIRED_PARAMETER(key='schedule.end_hour')
+    schedule['start_hour'] = schedule.get('start_hour', 0)
+    schedule['end_hour'] = schedule.get('end_hour', 0)
 
     if schedule['start_hour'] < 0 or schedule['start_hour'] > 24:
         raise ERROR_WRONG_SCHEDULE_SETTINGS(key='schedule.start_hour')
