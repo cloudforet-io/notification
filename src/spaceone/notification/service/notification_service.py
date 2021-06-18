@@ -214,6 +214,8 @@ class NotificationService(BaseService):
             elif plugin_info.metadata['data_type'] == 'SECRET':
                 channel_data = secret_mgr.get_secret_data(channel_vo.secret_id, domain_id)
 
+            _LOGGER.debug(f'[Plugin Initialize] plugin_id: {plugin_info.plugin_id} | version: {plugin_info.version}')
+
             plugin_mgr.initialize(plugin_info.plugin_id, plugin_info.version, domain_id)
             plugin_mgr.dispatch_notification(secret_data, channel_data, notification_type, message, plugin_info.options)
         else:
