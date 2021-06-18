@@ -28,7 +28,6 @@ def UserChannelInfo(user_channel_vo: UserChannel, minimal=False):
 
     if not minimal:
         info.update({
-            'schema': user_channel_vo.schema,
             'data': change_struct_type(user_channel_vo.data),
             'secret_id': user_channel_vo.secret_id,
             'is_subscribe': user_channel_vo.is_subscribe,

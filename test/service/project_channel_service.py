@@ -56,11 +56,9 @@ class TestProjectChannelService(unittest.TestCase):
         params = {
             'name': 'Test Project Channel',
             'protocol_id': protocol_id,
-            'schema': 'slack_webhook',
             'project_id': 'project-xyz',
             'data': {
-                'token': 'xxxxxx',
-                'channel': 'bob'
+                'channel': 'everyone'
             },
             'is_scheduled': True,
             'schedule': {
@@ -97,19 +95,13 @@ class TestProjectChannelService(unittest.TestCase):
     @patch.object(SecretConnector, 'create_secret', return_value={'secret_id': 'secret-xyz', 'name': 'Secret'})
     @patch.object(SecretConnector, 'update_secret', return_value={'secret_id': 'secret-xyz', 'name': 'Update Secret'})
     @patch.object(MongoModel, 'connect', return_value=None)
-    def test_create_project_channel_secret(self, *args):
-        protocol_capability = {
-            'data_type': 'SECRET',
-            'supported_schema': ['slack_webhook']
-        }
-
-        protocol_vo = ProtocolFactory(domain_id=self.domain_id, capability=protocol_capability)
+    def test_create_project_channel_2(self, *args):
+        protocol_vo = ProtocolFactory(domain_id=self.domain_id)
         protocol_id = protocol_vo.protocol_id
 
         params = {
             'name': 'Test Project Channel',
             'protocol_id': protocol_id,
-            'schema': 'slack_webhook',
             'project_id': 'project-xyz',
             'data': {
                 'token': 'xxxxxx',
@@ -138,8 +130,7 @@ class TestProjectChannelService(unittest.TestCase):
         self.assertEqual(params['name'], project_ch_vo.name)
         self.assertEqual(True, project_ch_vo.is_scheduled)
         self.assertEqual(False, project_ch_vo.is_subscribe)
-        self.assertEqual('secret-xyz', project_ch_vo.secret_id)
-        self.assertEqual({}, project_ch_vo.data)
+        self.assertEqual(None, project_ch_vo.secret_id)
         self.assertEqual(params['schedule']['day_of_week'], project_ch_vo.schedule.day_of_week)
         self.assertEqual(params['schedule']['start_hour'], project_ch_vo.schedule.start_hour)
         self.assertEqual(params['tags'], project_ch_vo.tags)

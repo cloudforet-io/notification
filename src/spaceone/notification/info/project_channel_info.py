@@ -26,7 +26,6 @@ def ProjectChannelInfo(project_channel_vo: ProjectChannel, minimal=False):
 
     if not minimal:
         info.update({
-            'schema': project_channel_vo.schema,
             'data': change_struct_type(project_channel_vo.data),
             'secret_id': project_channel_vo.secret_id,
             'is_subscribe': project_channel_vo.is_subscribe,

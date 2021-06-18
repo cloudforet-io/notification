@@ -56,7 +56,6 @@ class TestUserChannelService(unittest.TestCase):
         params = {
             'name': 'Test User Channel',
             'protocol_id': protocol_id,
-            'schema': 'slack_webhook',
             'user_id': 'bluese05',
             'data': {
                 'token': 'xxxxxx',
@@ -102,7 +101,6 @@ class TestUserChannelService(unittest.TestCase):
         params = {
             'name': 'Test User Channel',
             'protocol_id': protocol_id,
-            'schema': 'slack_webhook',
             'user_id': 'bluese05',
             'data': {
                 'token': 'xxxxxx',
@@ -150,7 +148,6 @@ class TestUserChannelService(unittest.TestCase):
         params = {
             'name': 'Test User Channel',
             'protocol_id': protocol_id,
-            'schema': 'slack_webhook',
             'user_id': 'bluese05',
             'data': {
                 'token': 'xxxxxx',
