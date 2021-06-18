@@ -214,6 +214,7 @@ class NotificationService(BaseService):
             elif plugin_info.metadata['data_type'] == 'SECRET':
                 channel_data = secret_mgr.get_secret_data(channel_vo.secret_id, domain_id)
 
+            plugin_mgr.initialize(plugin_info.plugin_id, plugin_info.version, domain_id)
             plugin_mgr.dispatch_notification(secret_data, channel_data, notification_type, message, plugin_info.options)
         else:
             _LOGGER.info('[Notification] Protocol is disabled. skip notification')
