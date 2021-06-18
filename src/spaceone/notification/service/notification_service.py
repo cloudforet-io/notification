@@ -202,19 +202,17 @@ class NotificationService(BaseService):
         protocol_vo = protocol_mgr.get_protocol(channel_vo.protocol_id, domain_id)
 
         if protocol_vo.state == 'ENABLED':
-            capability = protocol_vo.capability
             plugin_info = protocol_vo.plugin_info
             secret_data = {}
             channel_data = {}
 
             if secret_id := plugin_info.secret_id:
-                secret_data = secret_mgr.get_plugin_secret_data(secret_id, plugin_info.schema, domain_id)
+                secret_data = secret_mgr.get_secret_data(secret_id, domain_id)
 
             if plugin_info.metadata['data_type'] == 'PLAIN_TEXT':
                 channel_data = channel_vo.data
             elif plugin_info.metadata['data_type'] == 'SECRET':
-                channel_data = secret_mgr.get_plugin_secret_data(channel_vo.secret_id, capability['supported_schema'],
-                                                                 domain_id)
+                channel_data = secret_mgr.get_secret_data(channel_vo.secret_id, domain_id)
 
             plugin_mgr.dispatch_notification(secret_data, channel_data, notification_type, message, plugin_info.options)
         else:
