@@ -2,6 +2,7 @@ from spaceone.core import utils
 from spaceone.core.service import *
 from spaceone.notification.error import *
 from spaceone.notification.lib.schedule import *
+from spaceone.notification.lib.schema import *
 from spaceone.notification.manager import IdentityManager
 from spaceone.notification.manager import ProtocolManager
 from spaceone.notification.manager import ProjectChannelManager
@@ -69,14 +70,12 @@ class ProjectChannelService(BaseService):
         if protocol_vo.state == 'DISABLED':
             raise ERROR_PROTOCOL_DISABLED()
 
-        capability = protocol_vo.capability
+        metadata = protocol_vo.plugin_info.metadata
+        validate_json_schema(metadata.get('data', {}).get('schema', {}), data)
 
-        if schema not in capability.get('supported_schema', []):
-            raise ERROR_NOT_SUPPORT_SCHEMA(schema=schema)
-
-        if capability.get('data_type') == 'SECRET':
+        if metadata['data_type'] == 'SECRET':
             new_secret_parameters = {
-                'name': utils.generate_id('secret-prj-ch-tmp', 4),
+                'name': utils.generate_id('project-ch', 4),
                 'secret_type': 'CREDENTIALS',
                 'data': data,
                 'schema': schema,
@@ -92,17 +91,7 @@ class ProjectChannelService(BaseService):
             })
 
         # Create Project Channel
-        project_channel_vo: ProjectChannel = self.project_channel_mgr.create_project_channel(params)
-
-        if project_channel_vo.secret_id:
-            self.secret_mgr.update_secret({
-                'secret_id': project_channel_vo.secret_id,
-                'name': project_channel_vo.project_channel_id,
-                'project_id': project_id,
-                'domain_id': domain_id
-            })
-
-        return project_channel_vo
+        return self.project_channel_mgr.create_project_channel(params)
 
     @transaction(append_meta={'authorization.scope': 'PROJECT'})
     @check_required(['project_channel_id', 'domain_id'])
