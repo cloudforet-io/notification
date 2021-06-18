@@ -24,7 +24,7 @@ class ProjectChannelService(BaseService):
         self.secret_mgr: SecretManager = self.locator.get_manager('SecretManager')
 
     @transaction(append_meta={'authorization.scope': 'PROJECT'})
-    @check_required(['protocol_id', 'name', 'schema', 'data', 'project_id', 'domain_id'])
+    @check_required(['protocol_id', 'name', 'data', 'project_id', 'domain_id'])
     def create(self, params):
 
         """ Create Project Channel
@@ -32,7 +32,6 @@ class ProjectChannelService(BaseService):
             params (dict): {
                 'protocol_id': 'str',
                 'name': 'str',
-                'schema': 'str',
                 'data': 'dict',
                 'is_subscribe': 'bool',
                 'subscriptions': 'list',
@@ -51,7 +50,6 @@ class ProjectChannelService(BaseService):
         protocol_id = params['protocol_id']
         domain_id = params['domain_id']
         data = params['data']
-        schema = params['schema']
         project_id = params['project_id']
         is_subscribe = params.get('is_subscribe', False)
         is_scheduled = params.get('is_scheduled', False)
@@ -78,7 +76,6 @@ class ProjectChannelService(BaseService):
                 'name': utils.generate_id('project-ch', 4),
                 'secret_type': 'CREDENTIALS',
                 'data': data,
-                'schema': schema,
                 'project_id': project_id,
                 'domain_id': domain_id
             }
@@ -265,7 +262,7 @@ class ProjectChannelService(BaseService):
         'mutation.append_parameter': {'user_projects': 'authorization.projects'}
     })
     @check_required(['domain_id'])
-    @append_query_filter(['project_channel_id', 'name', 'state', 'schema', 'secret_id', 'is_subscribe', 'is_scheduled',
+    @append_query_filter(['project_channel_id', 'name', 'state', 'secret_id', 'is_subscribe', 'is_scheduled',
                           'notification_level', 'protocol_id', 'project_id', 'user_projects', 'domain_id'])
     @change_tag_filter('tags')
     @append_keyword_filter(['project_channel_id'])
@@ -277,7 +274,6 @@ class ProjectChannelService(BaseService):
                 'project_channel_id': 'str',
                 'name': 'str',
                 'state': 'str',
-                'schema': 'str',
                 'secret_id': 'str',
                 'is_subscribe': 'bool',
                 'is_scheduled': 'bool',

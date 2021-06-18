@@ -9,7 +9,6 @@ class UserChannel(MongoModel):
     protocol_id = StringField(max_length=40)
     name = StringField(max_length=255)
     state = StringField(max_length=20, default='ENABLED')
-    schema = StringField(max_length=40)
     data = DictField()
     is_subscribe = BooleanField(default=False)
     subscriptions = ListField(StringField(max_length=255), default=[])

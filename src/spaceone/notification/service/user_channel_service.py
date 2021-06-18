@@ -25,7 +25,7 @@ class UserChannelService(BaseService):
         self.secret_mgr: SecretManager = self.locator.get_manager('SecretManager')
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
-    @check_required(['protocol_id', 'name', 'schema', 'data', 'user_id', 'domain_id'])
+    @check_required(['protocol_id', 'name', 'data', 'user_id', 'domain_id'])
     def create(self, params):
         """ Create user Channel
 
@@ -33,7 +33,6 @@ class UserChannelService(BaseService):
             params (dict): {
                 'protocol_id': 'str',
                 'name': 'str',
-                'schema': 'str',
                 'data': 'dict',
                 'is_subscribe': 'bool',
                 'subscriptions': 'list',
@@ -51,7 +50,6 @@ class UserChannelService(BaseService):
         protocol_id = params['protocol_id']
         domain_id = params['domain_id']
         data = params['data']
-        schema = params['schema']
         user_id = params['user_id']
         is_subscribe = params.get('is_subscribe', False)
         is_scheduled = params.get('is_scheduled', False)
@@ -81,7 +79,6 @@ class UserChannelService(BaseService):
                 'name': utils.generate_id('user-ch', 4),
                 'secret_type': 'CREDENTIALS',
                 'data': data,
-                'schema': schema,
                 'domain_id': domain_id
             }
 
@@ -261,7 +258,7 @@ class UserChannelService(BaseService):
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['domain_id'])
-    @append_query_filter(['user_channel_id', 'name', 'state', 'schema', 'secret_id', 'protocol_id', 'user_id', 'domain_id'])
+    @append_query_filter(['user_channel_id', 'name', 'state', 'secret_id', 'protocol_id', 'user_id', 'domain_id'])
     @change_tag_filter('tags')
     @append_keyword_filter(['user_channel_id'])
     def list(self, params):
@@ -272,7 +269,6 @@ class UserChannelService(BaseService):
                 'user_channel_id': 'str',
                 'name': 'str',
                 'state': 'str',
-                'schema': 'str',
                 'secret_id': 'str',
                 'protocol_id': 'str',
                 'user_id': 'str',
