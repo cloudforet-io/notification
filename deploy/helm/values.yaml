@@ -6,7 +6,7 @@ developer: false
 grpc: true
 scheduler: false
 worker: false
-rest: true
+rest: false
 name: notification
 
 image:
@@ -74,21 +74,21 @@ service:
               port: 50051
               targetPort: 50051
               protocol: TCP
-    rest:
-      type: NodePort
-      ports:
-        - name: rest
-          port: 80
-          targetPort: 80
-          protocol: TCP
+#    rest:
+#      type: NodePort
+#      ports:
+#        - name: rest
+#          port: 80
+#          targetPort: 80
+#          protocol: TCP
 
 # Ingress for REST
-ingress:
-    annotations:
-        kubernetes.io/ingress.class: alb
-        alb.ingress.kubernetes.io/scheme: internet-facing
-    servicePort: 80
-    path: /*
+#ingress:
+#    annotations:
+#        kubernetes.io/ingress.class: alb
+#        alb.ingress.kubernetes.io/scheme: internet-facing
+#    servicePort: 80
+#    path: /*
 
 ################################
 # volumeMount per deployment

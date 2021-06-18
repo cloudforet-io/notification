@@ -2,6 +2,7 @@ from spaceone.core import utils
 from spaceone.core.service import *
 from spaceone.notification.error import *
 from spaceone.notification.lib.schedule import *
+from spaceone.notification.lib.schema import *
 from spaceone.notification.manager import IdentityManager
 from spaceone.notification.manager import UserChannelManager
 from spaceone.notification.model import UserChannel
@@ -72,34 +73,26 @@ class UserChannelService(BaseService):
         if protocol_vo.protocol_type == 'INTERNAL':
             raise ERROR_PROTOCOL_INTERNVAL()
 
-        capability = protocol_vo.capability
+        metadata = protocol_vo.plugin_info.metadata
+        validate_json_schema(metadata.get('data', {}).get('schema', {}), data)
 
-        if capability.get('data_type') == 'SECRET':
+        if metadata['data_type'] == 'SECRET':
             new_secret_parameters = {
-                'name': utils.generate_id('secret-user-ch-tmp', 4),
+                'name': utils.generate_id('user-ch', 4),
                 'secret_type': 'CREDENTIALS',
                 'data': data,
                 'schema': schema,
                 'domain_id': domain_id
             }
 
-            project_channel_secret = self.secret_mgr.create_secret(new_secret_parameters)
+            user_channel_secret = self.secret_mgr.create_secret(new_secret_parameters)
 
             params.update({
-                'secret_id': project_channel_secret['secret_id'],
+                'secret_id': user_channel_secret['secret_id'],
                 'data': {}
             })
 
-        user_channel_vo: UserChannel = self.user_channel_mgr.create_user_channel(params)
-
-        if user_channel_vo.secret_id:
-            self.secret_mgr.update_secret({
-                'secret_id': user_channel_vo.secret_id,
-                'name': user_channel_vo.user_channel_id,
-                'domain_id': domain_id
-            })
-
-        return user_channel_vo
+        return self.user_channel_mgr.create_user_channel(params)
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['user_channel_id', 'domain_id'])
