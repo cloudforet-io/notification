@@ -78,9 +78,3 @@ class ProtocolManager(BaseManager):
     def delete_protocol_by_vo(protocol_vo):
         return protocol_vo.delete()
 
-    # def create_default_protocols(self, installed_protocols, domain_id):
-    #     for single_protocol in DEFAULT_PROTOCOLS:
-    #         if single_protocol['name'] not in installed_protocols:
-    #             _LOGGER.debug(f'Create default protocol: {single_protocol["name"]}')
-    #             single_protocol['domain_id'] = domain_id
-    #             self.create_protocol(single_protocol)
