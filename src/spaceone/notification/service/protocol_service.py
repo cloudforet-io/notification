@@ -10,7 +10,7 @@ from spaceone.notification.manager import ProjectChannelManager
 from spaceone.notification.manager import UserChannelManager
 from spaceone.notification.manager import SecretManager
 from spaceone.notification.model import Protocol
-from spaceone.notification.conf.protocol_conf import DEFAULT_PROTOCOLS
+from spaceone.notification.conf.protocol_conf import DEFAULT_INTERNAL_PROTOCOLS
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -345,7 +345,7 @@ class ProtocolService(BaseService):
 
         installed_protocol_names = [protocol_vo.name for protocol_vo in protocol_vos]
 
-        for default_protocol in DEFAULT_PROTOCOLS:
+        for default_protocol in DEFAULT_INTERNAL_PROTOCOLS:
             if default_protocol['name'] not in installed_protocol_names:
                 _LOGGER.debug(f'Create default protocol: {default_protocol["name"]}')
                 default_protocol['domain_id'] = domain_id
