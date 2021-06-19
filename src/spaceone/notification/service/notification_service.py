@@ -91,10 +91,10 @@ class NotificationService(BaseService):
                               f'| notification_level: {dispatch_notification_level}')
 
                 if dispatch_subscribe and dispatch_schedule and dispatch_notification_level:
-                    _LOGGER.info('[Notification] Dispatch Notification to project')
+                    _LOGGER.info(f'[Notification] Dispatch Notification to project: {resource_id}')
                     self.dispatch_notification(protocol_vo, prj_ch_vo, notification_type, message, domain_id)
                 else:
-                    _LOGGER.info('[Notification] Skip Notification to project')
+                    _LOGGER.info(f'[Notification] Skip Notification to project: {resource_id}')
 
         if internal_project_channel:
             internal_project_channel_data = internal_project_channel.data
@@ -130,10 +130,10 @@ class NotificationService(BaseService):
             dispatch_schedule = self.check_schedule_for_dispatch(user_ch_vo.is_scheduled, user_ch_vo.schedule)
 
             if dispatch_subscribe and dispatch_schedule:
-                _LOGGER.info('[Notification] Dispatch Notification to user')
+                _LOGGER.info(f'[Notification] Dispatch Notification to user: {resource_id}')
                 self.dispatch_notification(protocol_vo, user_ch_vo, notification_type, message, domain_id)
             else:
-                _LOGGER.info('[Notification] Skip Notification to user')
+                _LOGGER.info(f'[Notification] Skip Notification to user: {resource_id}')
 
         params.update({'user_id': resource_id})
         self.notification_mgr.create_notification(params)
