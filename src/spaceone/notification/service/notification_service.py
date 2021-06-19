@@ -74,10 +74,10 @@ class NotificationService(BaseService):
                               f'| notification_level: {dispatch_notification_level}')
 
                 if dispatch_subscribe and dispatch_schedule and dispatch_notification_level:
-                    _LOGGER.info('[Notification] Dispatch Notificaiton to project')
+                    _LOGGER.info('[Notification] Dispatch Notification to project')
                     self.dispatch_notification(prj_ch_vo, notification_type, message, domain_id)
                 else:
-                    _LOGGER.info('[Notification] Skip Notificaiton to project')
+                    _LOGGER.info('[Notification] Skip Notification to project')
 
         elif resource_type == 'identity.User':
             user_ch_mgr: UserChannelManager = self.locator.get_manager('UserChannelManager')
