@@ -8,7 +8,7 @@ class ProjectChannel(MongoModel):
     project_id = StringField(max_length=255)
     protocol_id = StringField(max_length=40)
     name = StringField(max_length=255)
-    state = StringField(max_length=20, default='ENABLED')
+    state = StringField(max_length=20, default='ENABLED', choices=('ENABLED', 'DISABLED'))
     data = DictField()
     is_subscribe = BooleanField(default=False)
     subscriptions = ListField(StringField(max_length=255), default=[])
