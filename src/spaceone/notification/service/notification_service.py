@@ -76,25 +76,28 @@ class NotificationService(BaseService):
 
         internal_project_channel = None
         for prj_ch_vo in prj_ch_vos:
-            protocol_vo = protocol_mgr.get_protocol(prj_ch_vo.protocol_id, domain_id)
+            if prj_ch_vo.state == 'ENABLED':
+                protocol_vo = protocol_mgr.get_protocol(prj_ch_vo.protocol_id, domain_id)
 
-            if protocol_vo.protocol_type == 'INTERNAL':
-                internal_project_channel = prj_ch_vo
-            elif protocol_vo.protocol_type == 'EXTERNAL':
-                dispatch_subscribe = self.check_subscribe_for_dispatch(prj_ch_vo.is_subscribe, prj_ch_vo.subscriptions,
-                                                                       topic)
-                dispatch_schedule = self.check_schedule_for_dispatch(prj_ch_vo.is_scheduled, prj_ch_vo.schedule)
-                dispatch_notification_level = self.check_notification_level_for_dispatch(notification_level,
-                                                                                         prj_ch_vo.notification_level)
+                if protocol_vo.protocol_type == 'INTERNAL':
+                    internal_project_channel = prj_ch_vo
+                elif protocol_vo.protocol_type == 'EXTERNAL':
+                    dispatch_subscribe = self.check_subscribe_for_dispatch(prj_ch_vo.is_subscribe, prj_ch_vo.subscriptions,
+                                                                           topic)
+                    dispatch_schedule = self.check_schedule_for_dispatch(prj_ch_vo.is_scheduled, prj_ch_vo.schedule)
+                    dispatch_notification_level = self.check_notification_level_for_dispatch(notification_level,
+                                                                                             prj_ch_vo.notification_level)
 
-                _LOGGER.debug(f'[Notification] subscribe: {dispatch_subscribe} | schedule: {dispatch_schedule} '
-                              f'| notification_level: {dispatch_notification_level}')
+                    _LOGGER.debug(f'[Notification] subscribe: {dispatch_subscribe} | schedule: {dispatch_schedule} '
+                                  f'| notification_level: {dispatch_notification_level}')
 
-                if dispatch_subscribe and dispatch_schedule and dispatch_notification_level:
-                    _LOGGER.info(f'[Notification] Dispatch Notification to project: {resource_id}')
-                    self.dispatch_notification(protocol_vo, prj_ch_vo, notification_type, message, domain_id)
-                else:
-                    _LOGGER.info(f'[Notification] Skip Notification to project: {resource_id}')
+                    if dispatch_subscribe and dispatch_schedule and dispatch_notification_level:
+                        _LOGGER.info(f'[Notification] Dispatch Notification to project: {resource_id}')
+                        self.dispatch_notification(protocol_vo, prj_ch_vo, notification_type, message, domain_id)
+                    else:
+                        _LOGGER.info(f'[Notification] Skip Notification to project: {resource_id}')
+            else:
+                _LOGGER.info(f'[Notification] Project Channel is disabled: {prj_ch_vo.project_channel_id}')
 
         if internal_project_channel:
             internal_project_channel_data = internal_project_channel.data
@@ -123,17 +126,20 @@ class NotificationService(BaseService):
             {'filter': [{'k': 'user_id', 'v': resource_id, 'o': 'eq'}]})
 
         for user_ch_vo in user_ch_vos:
-            protocol_vo = protocol_mgr.get_protocol(user_ch_vo.protocol_id, domain_id)
+            if user_ch_vo.state == 'ENABLED':
+                protocol_vo = protocol_mgr.get_protocol(user_ch_vo.protocol_id, domain_id)
 
-            dispatch_subscribe = self.check_subscribe_for_dispatch(user_ch_vo.is_subscribe,
-                                                                   user_ch_vo.subscriptions, topic)
-            dispatch_schedule = self.check_schedule_for_dispatch(user_ch_vo.is_scheduled, user_ch_vo.schedule)
+                dispatch_subscribe = self.check_subscribe_for_dispatch(user_ch_vo.is_subscribe,
+                                                                       user_ch_vo.subscriptions, topic)
+                dispatch_schedule = self.check_schedule_for_dispatch(user_ch_vo.is_scheduled, user_ch_vo.schedule)
 
-            if dispatch_subscribe and dispatch_schedule:
-                _LOGGER.info(f'[Notification] Dispatch Notification to user: {resource_id}')
-                self.dispatch_notification(protocol_vo, user_ch_vo, notification_type, message, domain_id)
+                if dispatch_subscribe and dispatch_schedule:
+                    _LOGGER.info(f'[Notification] Dispatch Notification to user: {resource_id}')
+                    self.dispatch_notification(protocol_vo, user_ch_vo, notification_type, message, domain_id)
+                else:
+                    _LOGGER.info(f'[Notification] Skip Notification to user: {resource_id}')
             else:
-                _LOGGER.info(f'[Notification] Skip Notification to user: {resource_id}')
+                _LOGGER.info(f'[Notification] User Channel is disabled: {user_ch_vo.project_channel_id}')
 
         params.update({'user_id': resource_id})
         self.notification_mgr.create_notification(params)
