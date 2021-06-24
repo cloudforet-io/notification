@@ -144,14 +144,12 @@ class ProtocolService(BaseService):
             repo_mgr = self.locator.get_manager('RepositoryManager')
             repo_mgr.check_plugin_version(plugin_id, version, domain_id)
 
-            plugin_info.update({
-                'version': version,
-                'metadata': self._init_plugin(plugin_info, domain_id)
-            })
+            plugin_info.version = version
+            plugin_info.metadata = self._init_plugin(plugin_info, domain_id)
 
         if options or options == {}:
             # Overwrite
-            plugin_info['options'] = options
+            plugin_info.options = options
 
         params = {
             'protocol_id': protocol_id,
