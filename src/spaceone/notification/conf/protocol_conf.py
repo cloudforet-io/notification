@@ -9,5 +9,8 @@ DEFAULT_INTERNAL_PROTOCOLS = [{
         'metadata': {
             'data_type': 'PLAIN_TEXT'
         }
+    },
+    "tags": {
+        "icon": "https://spaceone-custom-assets.s3.ap-northeast-2.amazonaws.com/console-assets/icons/notifications_member.svg"
     }
 }]

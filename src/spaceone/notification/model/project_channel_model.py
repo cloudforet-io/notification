@@ -12,7 +12,7 @@ class ProjectChannel(MongoModel):
     data = DictField()
     is_subscribe = BooleanField(default=False)
     subscriptions = ListField(StringField(max_length=255), default=[])
-    notification_level = StringField(default='ALL', max_length=40, choices=('ALL', 'LV1', 'LV2', 'LV3', 'LV4', 'LV5'))
+    notification_level = StringField(default='LV1', max_length=40, choices=('LV1', 'LV2', 'LV3', 'LV4', 'LV5'))
     is_scheduled = BooleanField(default=False)
     schedule = EmbeddedDocumentField(Schedule, default=None, null=True)
     tags = DictField()

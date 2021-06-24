@@ -292,7 +292,7 @@ class NotificationService(BaseService):
 
     @staticmethod
     def check_notification_level_for_dispatch(notification_level, prj_channel_notification_level):
-        if prj_channel_notification_level == 'ALL' or notification_level == 'ALL':
+        if notification_level == 'ALL':
             return True
         elif prj_channel_notification_level == notification_level:
             return True
