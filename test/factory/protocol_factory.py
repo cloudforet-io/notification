@@ -13,7 +13,24 @@ class PluginInfoFactory(factory.mongoengine.MongoEngineFactory):
     version = '1.0'
     options = {}
     metadata = {
-        'data_type': 'PLAIN_TEXT'
+        'data_type': 'PLAIN_TEXT',
+        'data':  {
+            'schema': {
+                'properties': {
+                    'phone_number': {
+                        'minLength': 8,
+                        'title': 'Phone Number',
+                        'type': 'string',
+                        #'pattern': '^01(?:0|1|[6-9])[.-]?(\\d{3}|\\d{4})[.-]?(\\d{4})$'
+                        'pattern': '^[0-9.\-]{8,15}$'
+                    }
+                },
+                'required': [
+                    'phone_number'
+                ],
+                'type': 'object'
+            }
+        }
     }
     secret_id = utils.generate_id('secret')
 

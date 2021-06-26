@@ -58,7 +58,7 @@ class TestProjectChannelService(unittest.TestCase):
             'protocol_id': protocol_id,
             'project_id': 'project-xyz',
             'data': {
-                'channel': 'everyone'
+                'phone_number': '02.333.4444555555555'
             },
             'is_scheduled': True,
             'schedule': {

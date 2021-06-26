@@ -153,7 +153,7 @@ class TestProtocolService(unittest.TestCase):
     @patch.object(SecretConnector, '__init__', return_value=None)
     @patch.object(PluginConnector, '__init__', return_value=None)
     @patch.object(PluginConnector, 'get_plugin_endpoint', return_value='grpc://plugin.spaceone.dev:50051')
-    @patch.object(NotificationPluginConnector, 'initialize', return_value=None)
+    @patch.object(NotificationPluginConnector, 'initialize', return_value={'metadata': {'data_type': 'PLAIN_TEXT', 'data': {'schema': {'required': ['test']}}}})
     @patch.object(SecretConnector, 'get_secret_data', return_value={'data': {}})
     @patch.object(SecretConnector, 'list_secrets')
     @patch.object(NotificationPluginConnector, 'init')
@@ -165,9 +165,23 @@ class TestProtocolService(unittest.TestCase):
 
         mock_plugin_init.return_value = {
             'metadata': {
-                'supported_resource_type': ['inventory.Server'],
-                'supported_stat': ['AVERAGE', 'MAX', 'MIN'],
-                'required_keys': ['reference.resource_id']
+                'data_type': 'PLAIN_TEXT',
+                'data': {
+                    'schema': {
+                        'properties': {
+                            'phone_number': {
+                                'minLength': 10,
+                                'title': 'Phone Number',
+                                'type': 'string',
+                                'pattern': '^01(?:0|1|[6-9])[.-]?(\\d{3}|\\d{4}[.-]?(\\d{4})$'
+                            }
+                        },
+                        'required': [
+                            'phone_number'
+                        ],
+                        'type': 'object'
+                    }
+                }
             }
         }
 
