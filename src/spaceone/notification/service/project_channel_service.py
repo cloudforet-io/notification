@@ -1,3 +1,5 @@
+from jsonschema import validate
+
 from spaceone.core import utils
 from spaceone.core.service import *
 from spaceone.notification.error import *
@@ -69,7 +71,10 @@ class ProjectChannelService(BaseService):
             raise ERROR_PROTOCOL_DISABLED()
 
         metadata = protocol_vo.plugin_info.metadata
-        validate_json_schema(metadata.get('data', {}).get('schema', {}), data)
+        schema = metadata.get('data', {}).get('schema')
+
+        if schema:
+            validate_json_schema(data, schema)
 
         if metadata['data_type'] == 'SECRET':
             new_secret_parameters = {
@@ -113,15 +118,23 @@ class ProjectChannelService(BaseService):
 
         project_channel_vo: ProjectChannel = self.project_channel_mgr.get_project_channel(project_channel_id, domain_id)
 
-        if 'data' in params and project_channel_vo.secret_id:
-            secret_params = {
-                'secret_id': project_channel_vo.secret_id,
-                'data': params['data'],
-                'domain_id': domain_id
-            }
+        if 'data' in params:
+            protocol_vo = self.protocol_mgr.get_protocol(project_channel_vo.protocol_id, domain_id)
+            metadata = protocol_vo.plugin_info.metadata
+            schema = metadata.get('data', {}).get('schema')
 
-            self.secret_mgr.update_secret_data(secret_params)
-            params['data'] = {}
+            if schema:
+                validate_json_schema(params['data'], schema)
+
+            if project_channel_vo.secret_id:
+                secret_params = {
+                    'secret_id': project_channel_vo.secret_id,
+                    'data': params['data'],
+                    'domain_id': domain_id
+                }
+
+                self.secret_mgr.update_secret_data(secret_params)
+                params['data'] = {}
 
         return self.project_channel_mgr.update_project_channel_by_vo(params, project_channel_vo)
 
