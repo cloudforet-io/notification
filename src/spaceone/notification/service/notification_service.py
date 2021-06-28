@@ -74,40 +74,38 @@ class NotificationService(BaseService):
         prj_ch_vos, prj_ch_total_count = project_ch_mgr.list_project_channels(
             {'filter': [{'k': 'project_id', 'v': resource_id, 'o': 'eq'}]})
 
-        internal_project_channel = None
         for prj_ch_vo in prj_ch_vos:
             if prj_ch_vo.state == 'ENABLED':
                 protocol_vo = protocol_mgr.get_protocol(prj_ch_vo.protocol_id, domain_id)
 
-                if protocol_vo.protocol_type == 'INTERNAL':
-                    internal_project_channel = prj_ch_vo
-                elif protocol_vo.protocol_type == 'EXTERNAL':
-                    dispatch_subscribe = self.check_subscribe_for_dispatch(prj_ch_vo.is_subscribe, prj_ch_vo.subscriptions,
-                                                                           topic)
-                    dispatch_schedule = self.check_schedule_for_dispatch(prj_ch_vo.is_scheduled, prj_ch_vo.schedule)
-                    dispatch_notification_level = self.check_notification_level_for_dispatch(notification_level,
-                                                                                             prj_ch_vo.notification_level)
+                dispatch_subscribe = self.check_subscribe_for_dispatch(prj_ch_vo.is_subscribe, prj_ch_vo.subscriptions,
+                                                                       topic)
+                dispatch_schedule = self.check_schedule_for_dispatch(prj_ch_vo.is_scheduled, prj_ch_vo.schedule)
+                dispatch_notification_level = self.check_notification_level_for_dispatch(notification_level,
+                                                                                         prj_ch_vo.notification_level)
 
-                    _LOGGER.debug(f'[Notification] subscribe: {dispatch_subscribe} | schedule: {dispatch_schedule} '
-                                  f'| notification_level: {dispatch_notification_level}')
+                _LOGGER.debug(f'[Notification] subscribe: {dispatch_subscribe} | schedule: {dispatch_schedule} '
+                              f'| notification_level: {dispatch_notification_level}')
 
-                    if dispatch_subscribe and dispatch_schedule and dispatch_notification_level:
+                if dispatch_subscribe and dispatch_schedule and dispatch_notification_level:
+                    _LOGGER.info(f'[Notification] Dispatch Notification to project: {resource_id}')
+
+                    if protocol_vo.protocol_type == 'INTERNAL':
+                        internal_project_channel_data = prj_ch_vo.data
+                        for user_id in internal_project_channel_data.get('users', []):
+                            params.update({
+                                'resource_type': 'identity.User',
+                                'resource_id': user_id
+                            })
+                            _LOGGER.debug(f'[Forward to User Channel] User ID: {user_id}')
+                            self.dispatch_user_channel(params)
+                    elif protocol_vo.protocol_type == 'EXTERNAL':
                         _LOGGER.info(f'[Notification] Dispatch Notification to project: {resource_id}')
                         self.dispatch_notification(protocol_vo, prj_ch_vo, notification_type, message, domain_id)
-                    else:
-                        _LOGGER.info(f'[Notification] Skip Notification to project: {resource_id}')
+                else:
+                    _LOGGER.info(f'[Notification] Skip Notification to project: {resource_id}')
             else:
                 _LOGGER.info(f'[Notification] Project Channel is disabled: {prj_ch_vo.project_channel_id}')
-
-        if internal_project_channel:
-            internal_project_channel_data = internal_project_channel.data
-            for user_id in internal_project_channel_data.get('users', []):
-                params.update({
-                    'resource_type': 'identity.User',
-                    'resource_id': user_id
-                })
-                _LOGGER.debug(f'[Forward to User Channel] User ID: {user_id}')
-                self.dispatch_user_channel(params)
 
     def dispatch_user_channel(self, params):
         _LOGGER.debug(f'[Dispatch User Channel] User ID: {params["resource_id"]}')
