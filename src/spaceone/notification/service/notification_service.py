@@ -72,7 +72,8 @@ class NotificationService(BaseService):
         message = params['message']
 
         prj_ch_vos, prj_ch_total_count = project_ch_mgr.list_project_channels(
-            {'filter': [{'k': 'project_id', 'v': resource_id, 'o': 'eq'}]})
+            {'filter': [{'k': 'project_id', 'v': resource_id, 'o': 'eq'},
+                        {'k': 'domain_id', 'v': domain_id, 'o': 'eq'}]})
 
         for prj_ch_vo in prj_ch_vos:
             if prj_ch_vo.state == 'ENABLED':
@@ -121,7 +122,8 @@ class NotificationService(BaseService):
         message = params['message']
 
         user_ch_vos, user_ch_total_count = user_ch_mgr.list_user_channels(
-            {'filter': [{'k': 'user_id', 'v': resource_id, 'o': 'eq'}]})
+            {'filter': [{'k': 'user_id', 'v': resource_id, 'o': 'eq'},
+                        {'k': 'domain_id', 'v': domain_id, 'o': 'eq'}]})
 
         for user_ch_vo in user_ch_vos:
             if user_ch_vo.state == 'ENABLED':
