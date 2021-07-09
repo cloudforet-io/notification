@@ -163,6 +163,23 @@ class NotificationService(BaseService):
                                                   params['domain_id'])
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
+    @check_required(['notifications', 'domain_id'])
+    def set_read(self, params):
+        """  Change the notifications to read status.
+
+        Args:
+            params (dict): {
+                'notifications': 'list',
+                'domain_id': 'str'
+            }
+
+        Returns:
+            None
+        """
+
+        self.notification_mgr.set_read_notification(params['notifications'], params['domain_id'])
+
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['notification_id', 'domain_id'])
     def get(self, params):
 
@@ -181,9 +198,6 @@ class NotificationService(BaseService):
 
         notification_vo = self.notification_mgr.get_notification(params['notification_id'], params['domain_id'],
                                                                  params.get('only'))
-
-        if params.get('set_read', False) and notification_vo.is_read is False:
-            self.notification_mgr.set_read_notification(notification_vo)
 
         return notification_vo
 

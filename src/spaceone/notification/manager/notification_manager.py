@@ -1,7 +1,6 @@
 import logging
 from spaceone.core.manager import BaseManager
 from spaceone.notification.model.notification_model import Notification
-from pprint import pprint
 from spaceone.notification.error import *
 
 _LOGGER = logging.getLogger(__name__)
@@ -19,19 +18,23 @@ class NotificationManager(BaseManager):
                          f'Delete Notification : {notification_vo.name}'
                          f'({notification_vo.protocol_id})')
             notification_vo.delete()
-        pprint(params)
         notification_vo: Notification = self.notification_model.create(params)
         self.transaction.add_rollback(_rollback, notification_vo)
 
         return notification_vo
 
-    def set_read_notification(self, notification_vo):
-        def _rollback(old_data):
+    def set_read_notification(self, notifications, domain_id):
+        def _rollback(notification_vos):
             _LOGGER.info(f'[set_read_notification._rollback]')
-            notification_vo.update({'is_read': False})
+            notification_vos.update({'is_read': False})
 
-        self.transaction.add_rollback(_rollback, notification_vo.to_dict())
-        return notification_vo.update({'is_read': True})
+        query = {'filter': [{'k': 'notification_id', 'v': notifications, 'o': 'in'},
+                            {'k': 'domain_id', 'v': domain_id, 'o': 'eq'},
+                            {'k': 'is_read', 'v': False, 'o': 'eq'}]}
+
+        notification_vos, total_count = self.list_notifications(query)
+        self.transaction.add_rollback(_rollback, notification_vos)
+        notification_vos.update({'is_read': True})
 
     def delete_notification(self, notification_id, domain_id):
         notification_vo: Notification = self.get_notification(notification_id, domain_id)
@@ -40,7 +43,7 @@ class NotificationManager(BaseManager):
     def get_notification(self, notification_id, domain_id, only=None):
         return self.notification_model.get(notification_id=notification_id, domain_id=domain_id, only=only)
 
-    def list_notifications(self, query={}):
+    def list_notifications(self, query):
         return self.notification_model.query(**query)
 
     def stat_notifications(self, query):

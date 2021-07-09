@@ -21,6 +21,13 @@ class Notification(BaseAPI, notification_pb2_grpc.NotificationServicer):
             notification_svc.delete(params)
             return self.locator.get_info('EmptyInfo')
 
+    def set_read(self, request, context):
+        params, metadata = self.parse_request(request, context)
+
+        with self.locator.get_service('NotificationService', metadata) as notification_svc:
+            notification_svc.set_read(params)
+            return self.locator.get_info('EmptyInfo')
+
     def get(self, request, context):
         params, metadata = self.parse_request(request, context)
 
