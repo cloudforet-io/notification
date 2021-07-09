@@ -342,7 +342,7 @@ class ProtocolService(BaseService):
     def _create_default_protocol(self, domain_id):
         _LOGGER.debug(f'[_create_default_protocol] domain_id: {domain_id}')
 
-        query = {'domain_id': domain_id}
+        query = {'filter': [{'k': 'domain_id', 'v': domain_id, 'o': 'eq'}]}
         protocol_vos, total_count = self.protocol_mgr.list_protocols(query)
 
         installed_protocol_names = [protocol_vo.name for protocol_vo in protocol_vos]
