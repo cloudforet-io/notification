@@ -340,10 +340,13 @@ class ProtocolService(BaseService):
 
     @cache.cacheable(key='default-protocol:{domain_id}', expire=300)
     def _create_default_protocol(self, domain_id):
+        _LOGGER.debug(f'[_create_default_protocol] domain_id: {domain_id}')
+
         query = {'domain_id': domain_id}
         protocol_vos, total_count = self.protocol_mgr.list_protocols(query)
 
         installed_protocol_names = [protocol_vo.name for protocol_vo in protocol_vos]
+        _LOGGER.debug(f'[_create_default_protocol] Installed Plugins : {installed_protocol_names}')
 
         for default_protocol in DEFAULT_INTERNAL_PROTOCOLS:
             if default_protocol['name'] not in installed_protocol_names:
