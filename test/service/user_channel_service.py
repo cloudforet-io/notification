@@ -137,12 +137,7 @@ class TestUserChannelService(unittest.TestCase):
     @patch.object(SecretConnector, 'update_secret', return_value={'secret_id': 'secret-xyz', 'name': 'Update Secret'})
     @patch.object(MongoModel, 'connect', return_value=None)
     def test_create_user_channel_secret(self, *args):
-        protocol_capability = {
-            'data_type': 'SECRET',
-            'supported_schema': ['slack_webhook']
-        }
-
-        protocol_vo = ProtocolFactory(domain_id=self.domain_id, capability=protocol_capability)
+        protocol_vo = ProtocolFactory(domain_id=self.domain_id)
         protocol_id = protocol_vo.protocol_id
 
         params = {
@@ -150,8 +145,7 @@ class TestUserChannelService(unittest.TestCase):
             'protocol_id': protocol_id,
             'user_id': 'bluese05',
             'data': {
-                'token': 'xxxxxx',
-                'channel': 'bob'
+                'phone_number': '0107772222'
             },
             'is_scheduled': True,
             'schedule': {
@@ -176,8 +170,8 @@ class TestUserChannelService(unittest.TestCase):
         self.assertEqual(params['name'], user_ch_vo.name)
         self.assertEqual(True, user_ch_vo.is_scheduled)
         self.assertEqual(False, user_ch_vo.is_subscribe)
-        self.assertEqual('secret-xyz', user_ch_vo.secret_id)
-        self.assertEqual({}, user_ch_vo.data)
+        self.assertEqual(None, user_ch_vo.secret_id)
+        self.assertEqual({'phone_number': '0107772222'}, user_ch_vo.data)
         self.assertEqual(params['schedule']['day_of_week'], user_ch_vo.schedule.day_of_week)
         self.assertEqual(params['schedule']['start_hour'], user_ch_vo.schedule.start_hour)
         self.assertEqual(params['tags'], user_ch_vo.tags)

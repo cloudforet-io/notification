@@ -21,7 +21,7 @@ class ProjectChannelFactory(factory.mongoengine.MongoEngineFactory):
     }
     is_subscribe = True
     subscriptions = ['topic-a', 'topic-b']
-    notification_level = 'ALL'
+    notification_level = 'LV1'
     is_scheduled = True
 
     schedule = factory.SubFactory(ScheduleFactory)

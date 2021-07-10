@@ -58,7 +58,7 @@ class TestProjectChannelService(unittest.TestCase):
             'protocol_id': protocol_id,
             'project_id': 'project-xyz',
             'data': {
-                'phone_number': '02.333.4444555555555'
+                'phone_number': '0171700000'
             },
             'is_scheduled': True,
             'schedule': {
@@ -104,8 +104,7 @@ class TestProjectChannelService(unittest.TestCase):
             'protocol_id': protocol_id,
             'project_id': 'project-xyz',
             'data': {
-                'token': 'xxxxxx',
-                'channel': 'bob'
+                'phone_number': '0101123344'
             },
             'is_scheduled': True,
             'schedule': {
@@ -140,11 +139,12 @@ class TestProjectChannelService(unittest.TestCase):
     @patch.object(IdentityConnector, '__init__', return_value=None)
     @patch.object(MongoModel, 'connect', return_value=None)
     def test_update_project_channel(self, *args):
-        project_channel_vo = ProjectChannelFactory(domain_id=self.domain_id)
+        protocol_vo = ProtocolFactory(domain_id=self.domain_id)
+        project_channel_vo = ProjectChannelFactory(protocol_id=protocol_vo.protocol_id, domain_id=self.domain_id)
+
         name = 'Update Project Channel'
         data = {
-            'token': 'update-token',
-            'channel': 'update-channel'
+            'phone_number': '0109993333'
         }
 
         params = {
@@ -175,11 +175,13 @@ class TestProjectChannelService(unittest.TestCase):
     @patch.object(SecretConnector, 'update_secret_data')
     @patch.object(MongoModel, 'connect', return_value=None)
     def test_update_project_channel_secret(self, *args):
-        project_channel_vo = ProjectChannelFactory(domain_id=self.domain_id, secret_id='secret-xyz')
+        protocol_vo = ProtocolFactory(domain_id=self.domain_id)
+        project_channel_vo = ProjectChannelFactory(protocol_id=protocol_vo.protocol_id,
+                                                   domain_id=self.domain_id,
+                                                   secret_id='secret-xyz')
         name = 'Update Project Channel'
         data = {
-            'token': 'update-token',
-            'channel': 'update-channel'
+           'phone_number': '0109994444'
         }
 
         params = {

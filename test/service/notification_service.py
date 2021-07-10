@@ -94,7 +94,7 @@ class TestProtocolService(unittest.TestCase):
                 'message': 'TEST..'
             },
             'notification_type': 'ERROR',
-            'notification_level': 'ALL',
+            'notification_level': 'LV1',
             'domain_id': self.domain_id,
         }
 
@@ -165,25 +165,31 @@ class TestProtocolService(unittest.TestCase):
         self.assertEqual(get_noti_vo.notification_id, notification_vo.notification_id)
 
     @patch.object(MongoModel, 'connect', return_value=None)
-    def test_get_notification_with_set_read(self, *args):
-        notification_vo = NotificationFactory(domain_id=self.domain_id)
+    def test_set_read_notification(self, *args):
+        notification_vos = NotificationFactory.build_batch(20, domain_id=self.domain_id)
+        list(map(lambda vo: vo.save(), notification_vos))
+
+        notification_ids = [notification_vo.notification_id for notification_vo in notification_vos]
 
         params = {
-            'notification_id': notification_vo.notification_id,
-            'set_read': True,
+            'notifications': notification_ids[:10],
             'domain_id': self.domain_id
         }
 
-        self.transaction.method = 'get'
+        self.transaction.method = 'set_read'
         notification_svc = NotificationService(transaction=self.transaction)
-        get_noti_vo = notification_svc.get(params)
+        notification_svc.set_read(params)
 
-        print_data(get_noti_vo.to_dict(), 'test_get_notification_with_set_read')
-        NotificationInfo(get_noti_vo)
+        params = {
+            'is_read': True,
+            'domain_id': self.domain_id
+        }
 
-        self.assertIsInstance(get_noti_vo, Notification)
-        self.assertEqual(get_noti_vo.notification_id, notification_vo.notification_id)
-        self.assertEqual(get_noti_vo.is_read, True)
+        read_notification_vos, total_count = notification_svc.list(params)
+
+        self.assertIsInstance(read_notification_vos[0], Notification)
+        self.assertEqual(total_count, 10)
+        self.assertEqual(read_notification_vos[0].is_read, True)
 
     @patch.object(MongoModel, 'connect', return_value=None)
     def test_list_notifications_by_notification_id(self, *args):
