@@ -196,14 +196,12 @@ class NotificationService(BaseService):
             notification_vo (object)
         """
 
-        notification_vo = self.notification_mgr.get_notification(params['notification_id'], params['domain_id'],
-                                                                 params.get('only'))
-
-        return notification_vo
+        return self.notification_mgr.get_notification(params['notification_id'], params['domain_id'],
+                                                      params.get('only'))
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['domain_id'])
-    @append_query_filter(['notification_id', 'topic', 'notification_type', 'notification_level', 'parent_notification_id', 'project_id', 'user_id', 'domain_id'])
+    @append_query_filter(['notification_id', 'topic', 'notification_type', 'notification_level', 'parent_notification_id', 'is_read', 'project_id', 'user_id', 'domain_id'])
     @change_tag_filter('tags')
     @append_keyword_filter(['user_channel_id'])
     def list(self, params):
@@ -218,7 +216,7 @@ class NotificationService(BaseService):
                 'secret_id': 'str',
                 'protocol_id': 'str',
                 'user_id': 'str',
-                'set_read': 'bool',
+                'is_read': 'bool',
                 'query': 'dict (spaceone.api.core.v1.Query)',
                 'domain_id': 'str'
             }
@@ -229,10 +227,7 @@ class NotificationService(BaseService):
         """
 
         query = params.get('query', {})
-        notification_vos, total_count = self.notification_mgr.list_notifications(query)
-
-        # TODO: update is_read when set_read is True
-        return notification_vos, total_count
+        return self.notification_mgr.list_notifications(query)
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['query', 'domain_id'])

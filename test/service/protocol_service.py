@@ -251,6 +251,8 @@ class TestProtocolService(unittest.TestCase):
         self.assertEqual('DISABLED', updated_protocol_vo.state)
 
     @patch.object(MongoModel, 'connect', return_value=None)
+    @patch.object(SecretConnector, '__init__', return_value=None)
+    @patch.object(SecretConnector, 'delete_secret', return_value=None)
     def test_delete_protocol(self, *args):
         protocol_vo = ProtocolFactory(domain_id=self.domain_id)
         params = {

@@ -14,6 +14,9 @@ class Notification(MongoModel):
     created_at = DateTimeField(auto_now_add=True)
 
     meta = {
+        'updatable_fields': [
+            'is_read'
+        ],
         'minimal_fields': [
             'notification_id',
             'topic',

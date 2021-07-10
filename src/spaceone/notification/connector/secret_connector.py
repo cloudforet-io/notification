@@ -26,10 +26,10 @@ class SecretConnector(BaseConnector):
 
     def _check_config(self):
         if 'endpoint' not in self.config:
-            raise ERROR_CONNECTOR_CONFIGURATION(backend=self.__class__.__name__)
+            raise ERROR_CONNECTOR_CONFIGURATION(connector=self.__class__.__name__)
 
         if len(self.config['endpoint']) > 1:
-            raise ERROR_CONNECTOR_CONFIGURATION(backend=self.__class__.__name__)
+            raise ERROR_CONNECTOR_CONFIGURATION(connector=self.__class__.__name__)
 
     def create_secret(self, params):
         response = self.client.Secret.create(params, metadata=self.transaction.get_connection_meta())
