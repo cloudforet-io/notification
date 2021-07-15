@@ -22,6 +22,7 @@ def NotificationInfo(notification_vo: Notification, minimal=False):
             info.update({'user_id': notification_vo.user_id})
 
         info.update({
+            'message': change_struct_type(notification_vo.message),
             'is_read': notification_vo.is_read,
             'created_at': utils.datetime_to_iso8601(notification_vo.created_at),
             'domain_id': notification_vo.domain_id
