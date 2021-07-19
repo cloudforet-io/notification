@@ -139,7 +139,7 @@ class NotificationService(BaseService):
                 else:
                     _LOGGER.info(f'[Notification] Skip Notification to user: {resource_id}')
             else:
-                _LOGGER.info(f'[Notification] User Channel is disabled: {user_ch_vo.project_channel_id}')
+                _LOGGER.info(f'[Notification] User Channel is disabled: {user_ch_vo.user_channel_id}')
 
         params.update({'user_id': resource_id})
         self.notification_mgr.create_notification(params)
@@ -178,6 +178,23 @@ class NotificationService(BaseService):
         """
 
         self.notification_mgr.set_read_notification(params['notifications'], params['domain_id'])
+
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
+    @check_required(['users', 'domain_id'])
+    def delete_all(self, params):
+        """  Delete all notifications of target users
+
+        Args:
+            params (dict): {
+                'users': 'list',
+                'domain_id': 'str'
+            }
+
+        Returns:
+            None
+        """
+
+        self.notification_mgr.delete_all_notifications(params['users'], params['domain_id'])
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['notification_id', 'domain_id'])

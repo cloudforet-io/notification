@@ -165,6 +165,25 @@ class TestProtocolService(unittest.TestCase):
         self.assertEqual(get_noti_vo.notification_id, notification_vo.notification_id)
 
     @patch.object(MongoModel, 'connect', return_value=None)
+    def test_delete_all_notifications(self, *args):
+        notification_vos = NotificationFactory.build_batch(20, domain_id=self.domain_id)
+        list(map(lambda vo: vo.save(), notification_vos))
+
+        user_ids = [notification_vo.user_id for notification_vo in notification_vos]
+
+        params = {
+            'users': user_ids[:10],
+            'domain_id': self.domain_id
+        }
+
+        self.transaction.method = 'delete_all'
+        notification_svc = NotificationService(transaction=self.transaction)
+        notification_svc.delete_all(params)
+
+        notification_vos, total_count = notification_svc.list({'domain_id': self.domain_id})
+        self.assertEqual(total_count, 10)
+
+    @patch.object(MongoModel, 'connect', return_value=None)
     def test_set_read_notification(self, *args):
         notification_vos = NotificationFactory.build_batch(20, domain_id=self.domain_id)
         list(map(lambda vo: vo.save(), notification_vos))
