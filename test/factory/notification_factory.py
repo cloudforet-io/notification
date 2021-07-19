@@ -16,6 +16,6 @@ class NotificationFactory(factory.mongoengine.MongoEngineFactory):
     }
     notification_type = 'ERROR'
     notification_level = 'ALL'
-    user_id = utils.generate_id('user')
+    user_id = factory.LazyAttribute(lambda o: utils.generate_id('user'))
     domain_id = utils.generate_id('domain')
     created_at = factory.Faker('date_time')
