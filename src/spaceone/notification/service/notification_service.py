@@ -139,7 +139,7 @@ class NotificationService(BaseService):
                 else:
                     _LOGGER.info(f'[Notification] Skip Notification to user: {resource_id}')
             else:
-                _LOGGER.info(f'[Notification] User Channel is disabled: {user_ch_vo.project_channel_id}')
+                _LOGGER.info(f'[Notification] User Channel is disabled: {user_ch_vo.user_channel_id}')
 
         params.update({'user_id': resource_id})
         self.notification_mgr.create_notification(params)
