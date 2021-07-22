@@ -13,7 +13,7 @@ class PluginInfo(EmbeddedDocument):
 
 class Protocol(MongoModel):
     protocol_id = StringField(max_length=40, generate_id='protocol', unique=True)
-    name = StringField(max_length=255)
+    name = StringField(max_length=255, unique_with=['domain_id'])
     state = StringField(max_length=20, default='ENABLED', choices=('ENABLED', 'DISABLED'))
     protocol_type = StringField(max_length=40, default='EXTERNAL', choices=('EXTERNAL', 'INTERNAL'))
     resource_type = StringField(max_length=40, null=True, default=None)
