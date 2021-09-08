@@ -76,7 +76,7 @@ ENDPOINTS = [
     # },
 ]
 
-NOTIFICATION_PROTOCOLS = [
+INSTALLED_PROTOCOL_PLUGINS = [
     # {
     #     'name': 'Email',
     #     'plugin_info': {
