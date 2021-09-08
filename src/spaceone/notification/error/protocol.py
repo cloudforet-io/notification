@@ -5,6 +5,10 @@ class ERROR_INVALID_PLUGIN_VERSION(ERROR_INVALID_ARGUMENT):
     _message = 'Plugin version is invalid. (plugin_id = {plugin_id}, version = {version})'
 
 
+class ERROR_NOT_FOUND_PLUGIN_VERSION(ERROR_BASE):
+    _message = 'Not Found Plugin version (plugin_id= {plugin_id})'
+
+
 class ERROR_SUPPORTED_SECRETS_NOT_EXISTS(ERROR_INVALID_ARGUMENT):
     _message = 'There are no secrets that support plugins. (plugin_id = {plugin_id}, provider = {provider})'
 

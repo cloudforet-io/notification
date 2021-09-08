@@ -75,3 +75,19 @@ ENDPOINTS = [
     #     'endpoint': 'grpc://<endpoint>>:<port>/v1'
     # },
 ]
+
+NOTIFICATION_PROTOCOLS = [
+    # {
+    #     'name': 'Email',
+    #     'plugin_info': {
+    #         'plugin_id': 'plugin-email-notification-protocol',
+    #         'version': '1.0',
+    #         'options': {},
+    #         'secret_data': {}
+    #         'schema': 'email_smtp'
+    #     },
+    #     'tags':{
+    #         'description': 'email'
+    #     }
+    # }
+]

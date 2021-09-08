@@ -266,6 +266,22 @@ class NotificationService(BaseService):
         query = params.get('query', {})
         return self.notification_mgr.stat_notifications(query)
 
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
+    def delete_old_notifications(self, params):
+        """ Delete old notifications
+
+        Args:
+            params (dict): {}
+
+        Returns:
+            None
+        """
+
+        now = datetime.now() - datetime.timedelta(days=4)
+        now.strftime('%Y-%m-%dT%H:%M:%S')
+
+        # query = {'filter': [{'k': 'protocol_id', 'v': protocol_vo.protocol_id, 'o': 'eq'}]}
+
     def dispatch_notification(self, protocol_vo, channel_vo, notification_type, message, domain_id):
         plugin_mgr: PluginManager = self.locator.get_manager('PluginManager')
         secret_mgr: SecretManager = self.locator.get_manager('SecretManager')
@@ -286,7 +302,14 @@ class NotificationService(BaseService):
             _LOGGER.debug(f'[Plugin Initialize] plugin_id: {plugin_info.plugin_id} | version: {plugin_info.version} '
                           f'| domain_id: {domain_id}')
             try:
-                plugin_mgr.initialize(plugin_info.plugin_id, plugin_info.version, domain_id)
+                plugin_info_dict = {
+                    'plugin_id': plugin_info.plugin_id,
+                    'version': plugin_info.version,
+                    'options': plugin_info.options,
+                    'upgrade_mode': plugin_info.upgrade_mode
+                }
+
+                plugin_mgr.initialize(plugin_info_dict, domain_id)
                 plugin_mgr.dispatch_notification(secret_data, channel_data, notification_type, message, plugin_info.options)
             except Exception as e:
                 _LOGGER.error(f'[Notification] Plugin Error: {e}')

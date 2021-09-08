@@ -15,7 +15,8 @@ def PluginInfo(plugin_info):
             'version': plugin_info.version,
             'options': change_struct_type(plugin_info.options),
             'metadata': change_struct_type(plugin_info.metadata),
-            'secret_id': plugin_info.secret_id
+            'secret_id': plugin_info.secret_id,
+            'upgrade_mode': plugin_info.upgrade_mode
         }
         return protocol_pb2.PluginInfo(**info)
     return None

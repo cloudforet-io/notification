@@ -10,7 +10,8 @@ from spaceone.notification.manager import ProjectChannelManager
 from spaceone.notification.manager import UserChannelManager
 from spaceone.notification.manager import SecretManager
 from spaceone.notification.model import Protocol
-from spaceone.notification.conf.protocol_conf import DEFAULT_INTERNAL_PROTOCOLS
+from spaceone.notification.conf.protocol_conf import *
+from spaceone.notification.conf.global_conf import *
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -35,7 +36,8 @@ class ProtocolService(BaseService):
                 'name': 'str',
                 'plugin_info': 'dict',
                 'tags': 'dict',
-                'domain_id': 'str'
+                'domain_id': 'str',
+                'upgrade_mode': 'str'
             }
 
         Returns:
@@ -56,14 +58,18 @@ class ProtocolService(BaseService):
         _LOGGER.debug(f'[create] capability: {params["capability"]}')
         _LOGGER.debug(f'[create] name: {params["name"]}')
 
+        plugin_metadata, endpoint_info = self._init_plugin(plugin_info, domain_id)
+
         request_plugin = {
             'plugin_id': plugin_info['plugin_id'],
-            'version': plugin_info['version'],
             'options': plugin_info['options'],
+            'metadata': plugin_metadata
         }
 
-        plugin_metadata = self._init_plugin(plugin_info, domain_id)
-        request_plugin.update({'metadata': plugin_metadata})
+        if version := endpoint_info.get('updated_version', plugin_info.get('version')):
+            request_plugin.update({
+                'version': version
+            })
 
         if 'secret_data' in plugin_info:
             secret_mgr: SecretManager = self.locator.get_manager('SecretManager')
@@ -137,15 +143,30 @@ class ProtocolService(BaseService):
 
         plugin_info = protocol_vo.plugin_info
 
-        if version := params.get('version'):
-            # Update plugin_version
-            plugin_id = plugin_info.plugin_id
+        plugin_info_dict = {
+            'plugin_id': plugin_info.plugin_id,
+            'version': plugin_info.version,
+            'options': plugin_info.options,
+            'upgrade_mode': plugin_info.upgrade_mode
+        }
 
-            repo_mgr = self.locator.get_manager('RepositoryManager')
-            repo_mgr.check_plugin_version(plugin_id, version, domain_id)
+        if plugin_info.upgrade_mode == 'AUTO':
+            plugin_metadata, endpoint_info = self._init_plugin(plugin_info_dict, domain_id)
 
-            plugin_info.version = version
-            plugin_info.metadata = self._init_plugin(plugin_info, domain_id)
+            plugin_info.metadata = plugin_metadata
+
+            if version := endpoint_info.get('updated_version'):
+                plugin_info.version = version
+        else:
+            if version := params.get('version'):
+                # Update plugin_version
+                plugin_id = plugin_info.plugin_id
+
+                repo_mgr = self.locator.get_manager('RepositoryManager')
+                repo_mgr.check_plugin_version(plugin_id, version, domain_id)
+
+                plugin_info.version = version
+                plugin_info.metadata = self._init_plugin(plugin_info_dict, domain_id)
 
         if options or options == {}:
             # Overwrite
@@ -239,6 +260,7 @@ class ProtocolService(BaseService):
 
         # Create Default Protocol if protocol is not exited
         self._create_default_protocol(domain_id)
+        self._initialize_protocol(domain_id)
 
         return self.protocol_mgr.get_protocol(protocol_id, domain_id, params.get('only'))
 
@@ -269,6 +291,7 @@ class ProtocolService(BaseService):
 
         # Create Default Protocol if protocol is not exited
         self._create_default_protocol(domain_id)
+        self._initialize_protocol(domain_id)
 
         return self.protocol_mgr.list_protocols(query)
 
@@ -294,23 +317,23 @@ class ProtocolService(BaseService):
 
     def _get_plugin(self, plugin_info, domain_id):
         plugin_id = plugin_info['plugin_id']
-        version = plugin_info['version']
 
         repo_mgr: RepositoryManager = self.locator.get_manager('RepositoryManager')
         plugin_info = repo_mgr.get_plugin(plugin_id, domain_id)
-        repo_mgr.check_plugin_version(plugin_id, version, domain_id)
+
+        if version := plugin_info.get('version'):
+            repo_mgr.check_plugin_version(plugin_id, version, domain_id)
 
         return plugin_info
 
     def _init_plugin(self, plugin_info, domain_id):
-        plugin_id = plugin_info['plugin_id']
-        version = plugin_info['version']
         options = plugin_info['options']
 
         plugin_mgr: PluginManager = self.locator.get_manager('PluginManager')
-        plugin_mgr.initialize(plugin_id, version, domain_id)
+        endpoint_info = plugin_mgr.initialize(plugin_info, domain_id)
+        metadata = plugin_mgr.init_plugin(options)
 
-        return plugin_mgr.init_plugin(options)
+        return metadata, endpoint_info
 
     def check_existed_channel_using_protocol(self, protocol_vo):
         project_channel_mgr: ProjectChannelManager = self.locator.get_manager('ProjectChannelManager')
@@ -329,14 +352,15 @@ class ProtocolService(BaseService):
         if 'plugin_id' not in plugin_info_params:
             raise ERROR_REQUIRED_PARAMETER(key='plugin_info.plugin_id')
 
-        if 'version' not in plugin_info_params:
-            raise ERROR_REQUIRED_PARAMETER(key='plugin_info.version')
-
         if 'options' not in plugin_info_params:
             raise ERROR_REQUIRED_PARAMETER(key='plugin_info.options')
 
         if 'secret_data' in plugin_info_params and 'schema' not in plugin_info_params:
             raise ERROR_REQUIRED_PARAMETER(key='plugin_info.schema')
+
+        if 'upgrade_mode' in plugin_info_params and plugin_info_params['upgrade_mode'] == 'MANUAL':
+            if 'version' not in plugin_info_params:
+                raise ERROR_REQUIRED_PARAMETER(key='plugin_info.version')
 
     @cache.cacheable(key='default-protocol:{domain_id}', expire=300)
     def _create_default_protocol(self, domain_id):
@@ -353,5 +377,23 @@ class ProtocolService(BaseService):
                 _LOGGER.debug(f'Create default protocol: {default_protocol["name"]}')
                 default_protocol['domain_id'] = domain_id
                 self.protocol_mgr.create_protocol(default_protocol)
+
+        return True
+
+    @cache.cacheable(key='init-protocol:{domain_id}', expire=300)
+    def _initialize_protocol(self, domain_id):
+        _LOGGER.debug(f'[_initialize_protocol] domain_id: {domain_id}')
+
+        query = {'filter': [{'k': 'domain_id', 'v': domain_id, 'o': 'eq'}]}
+        protocol_vos, total_count = self.protocol_mgr.list_protocols(query)
+
+        installed_protocol_names = [protocol_vo.name for protocol_vo in protocol_vos]
+        _LOGGER.debug(f'[_initialize_protocol] Installed Plugins : {installed_protocol_names}')
+
+        for _protocol in NOTIFICATION_PROTOCOLS:
+            if _protocol['name'] not in installed_protocol_names:
+                _LOGGER.debug(f'[_initialize_protocol] Create init protocol: {_protocol["name"]}')
+                _protocol['domain_id'] = domain_id
+                self.create(_protocol)
 
         return True
