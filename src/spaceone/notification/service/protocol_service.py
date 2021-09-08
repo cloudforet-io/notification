@@ -1,6 +1,7 @@
 import logging
 from spaceone.core import cache
 from spaceone.core import utils
+from spaceone.core import config
 from spaceone.core.service import *
 from spaceone.notification.error import *
 from spaceone.notification.manager import RepositoryManager
@@ -11,7 +12,7 @@ from spaceone.notification.manager import UserChannelManager
 from spaceone.notification.manager import SecretManager
 from spaceone.notification.model import Protocol
 from spaceone.notification.conf.protocol_conf import *
-from spaceone.notification.conf.global_conf import *
+
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -390,7 +391,8 @@ class ProtocolService(BaseService):
         installed_protocol_names = [protocol_vo.name for protocol_vo in protocol_vos]
         _LOGGER.debug(f'[_initialize_protocol] Installed Plugins : {installed_protocol_names}')
 
-        for _protocol in NOTIFICATION_PROTOCOLS:
+        global_conf = config.get_global()
+        for _protocol in global_conf.get('INSTALLED_PROTOCOL_PLUGINS', []):
             if _protocol['name'] not in installed_protocol_names:
                 _LOGGER.debug(f'[_initialize_protocol] Create init protocol: {_protocol["name"]}')
                 _protocol['domain_id'] = domain_id
