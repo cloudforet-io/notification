@@ -22,6 +22,7 @@ class PluginInfoFactory(factory.mongoengine.MongoEngineFactory):
                         'title': 'Phone Number',
                         'type': 'string',
                         'pattern': '^01(?:0|1|[6-9])(\\d{3}|\\d{4})(\\d{4})$'
+                        # 'pattern': '^[\W]*([\w+\-.%]+@[\w\-.]+\.[A-Za-z]{2,4}[\W]*,{1}[\W]*)*([\w+\-.%]+@[\w\-.]+\.[A-Za-z]{2,4})[\W]*$'
                         # 'pattern': '^[0-9.\-]{8,15}$'
                     }
                 },
@@ -33,6 +34,7 @@ class PluginInfoFactory(factory.mongoengine.MongoEngineFactory):
         }
     }
     secret_id = utils.generate_id('secret')
+    upgrade_mode = 'AUTO'
 
 
 class ProtocolFactory(factory.mongoengine.MongoEngineFactory):

@@ -51,17 +51,17 @@ class TestProtocolService(unittest.TestCase):
     @patch.object(SecretConnector, '__init__', return_value=None)
     @patch.object(SecretConnector, 'create_secret', return_value={'secret_id': 'secret-xyz', 'name': 'Secret'})
     @patch.object(PluginConnector, '__init__', return_value=None)
-    @patch.object(PluginConnector, 'get_plugin_endpoint', return_value='grpc://plugin.spaceone.dev:50051')
+    @patch.object(PluginConnector, 'get_plugin_endpoint', return_value={'endpoint': 'grpc://plugin.spaceone.dev:50051', 'updated_version': '1.2'})
     @patch.object(NotificationPluginConnector, 'initialize', return_value=None)
     @patch.object(SecretConnector, 'get_secret_data', return_value={'data': {}})
-    @patch.object(RepositoryConnector, 'get_plugin_versions', return_value=['1.0', '1.1', '1.2'])
+    @patch.object(RepositoryConnector, 'get_plugin_versions', return_value=['1.2', '1.1', '1.0'])
     @patch.object(RepositoryConnector, 'get_plugin')
     @patch.object(SecretConnector, 'list_secrets')
     @patch.object(NotificationPluginConnector, 'init')
     def test_create_protocol(self, mock_plugin_verify, mock_list_secrets, mock_get_plugin, *args):
         secret_id = utils.generate_id('secret')
         plugin_id = utils.generate_id('plugin')
-        plugin_version = '1.0'
+        plugin_version = '1.2'
 
         mock_plugin_verify.return_value = {
             'metadata': {
@@ -96,7 +96,6 @@ class TestProtocolService(unittest.TestCase):
             'name': 'Slack Notification',
             'plugin_info': {
                 'plugin_id': plugin_id,
-                'version': plugin_version,
                 'options': {},
                 'secret_data': {
                     'a': 'b',
@@ -121,6 +120,86 @@ class TestProtocolService(unittest.TestCase):
         self.assertEqual(params['name'], protocol_vo.name)
         self.assertEqual(params['tags'], protocol_vo.tags)
         self.assertEqual(params['domain_id'], protocol_vo.domain_id)
+        self.assertEqual(protocol_vo.plugin_info.version, plugin_version)
+
+    @patch.object(MongoModel, 'connect', return_value=None)
+    @patch.object(RepositoryConnector, '__init__', return_value=None)
+    @patch.object(SecretConnector, '__init__', return_value=None)
+    @patch.object(SecretConnector, 'create_secret', return_value={'secret_id': 'secret-xyz', 'name': 'Secret'})
+    @patch.object(PluginConnector, '__init__', return_value=None)
+    @patch.object(PluginConnector, 'get_plugin_endpoint',
+                  return_value={'endpoint': 'grpc://plugin.spaceone.dev:50051', 'updated_version': '1.2'})
+    @patch.object(NotificationPluginConnector, 'initialize', return_value=None)
+    @patch.object(SecretConnector, 'get_secret_data', return_value={'data': {}})
+    @patch.object(RepositoryConnector, 'get_plugin_versions', return_value=['1.2', '1.1', '1.0'])
+    @patch.object(RepositoryConnector, 'get_plugin')
+    @patch.object(SecretConnector, 'list_secrets')
+    @patch.object(NotificationPluginConnector, 'init')
+    def test_create_protocol_upgrade_manual_mode(self, mock_plugin_verify, mock_list_secrets, mock_get_plugin, *args):
+        secret_id = utils.generate_id('secret')
+        plugin_id = utils.generate_id('plugin')
+        plugin_version = '1.2'
+
+        mock_plugin_verify.return_value = {
+            'metadata': {
+                'data_type': 'PLAIN_TEXT',
+                'data': {}
+            }
+        }
+
+        mock_list_secrets.return_value = {
+            'results': [{
+                'secret_id': secret_id,
+                'schema': 'aws_access_key'
+            }],
+            'total_count': 1
+        }
+
+        mock_get_plugin.return_value = {
+            'name': 'notification-slack-protocol',
+            'service_type': 'notification.Protocol',
+            'image': 'pyengine/notification-slack-protocol',
+            'capability': {
+                'supported_schema': ['slack_webhook', 'spaceone_user'],
+                'data_type': 'SECRET'
+            },
+            'tags': {
+                'description': 'Notification Slack Protocol',
+                'spaceone:plugin_name': 'notification-slack-protocol'
+            }
+        }
+
+        params = {
+            'name': 'Slack Notification',
+            'plugin_info': {
+                'plugin_id': plugin_id,
+                'options': {},
+                'secret_data': {
+                    'a': 'b',
+                    'c': 'd'
+                },
+                'schema': 'slack_webhook',
+                'upgrade_mode': 'MANUAL',
+                'version': plugin_version
+            },
+            'tags': {
+                utils.random_string(): utils.random_string()
+            },
+            'domain_id': self.domain_id
+        }
+
+        self.transaction.method = 'create'
+        protocol_svc = ProtocolService(transaction=self.transaction)
+        protocol_vo = protocol_svc.create(params.copy())
+
+        print_data(protocol_vo.to_dict(), 'test_create_protocol')
+        ProtocolInfo(protocol_vo)
+
+        self.assertIsInstance(protocol_vo, Protocol)
+        self.assertEqual(params['name'], protocol_vo.name)
+        self.assertEqual(params['tags'], protocol_vo.tags)
+        self.assertEqual(params['domain_id'], protocol_vo.domain_id)
+        self.assertEqual(protocol_vo.plugin_info.version, plugin_version)
 
     @patch.object(MongoModel, 'connect', return_value=None)
     def test_update_protocol(self, *args):
@@ -148,17 +227,18 @@ class TestProtocolService(unittest.TestCase):
 
     @patch.object(MongoModel, 'connect', return_value=None)
     @patch.object(RepositoryConnector, '__init__', return_value=None)
-    @patch.object(RepositoryConnector, 'get_plugin_versions', return_value=['1.0', '1.1', '1.2'])
+    @patch.object(RepositoryConnector, 'get_plugin_versions', return_value=['1.2', '1.1', '1.1'])
     @patch.object(RepositoryConnector, 'get_plugin')
     @patch.object(SecretConnector, '__init__', return_value=None)
     @patch.object(PluginConnector, '__init__', return_value=None)
-    @patch.object(PluginConnector, 'get_plugin_endpoint', return_value='grpc://plugin.spaceone.dev:50051')
+    @patch.object(PluginConnector, 'get_plugin_endpoint', return_value={'endpoint': 'grpc://plugin.spaceone.dev:50051', 'updated_version': '1.2'})
     @patch.object(NotificationPluginConnector, 'initialize', return_value={'metadata': {'data_type': 'PLAIN_TEXT', 'data': {'schema': {'required': ['test']}}}})
     @patch.object(SecretConnector, 'get_secret_data', return_value={'data': {}})
     @patch.object(SecretConnector, 'list_secrets')
     @patch.object(NotificationPluginConnector, 'init')
     def test_update_protocol_plugin(self, mock_plugin_init, mock_list_secrets, *args):
-        plugin_version = '1.2'
+        updated_version = '1.2'
+
         update_options = {
             'test': 'xxxxx'
         }
@@ -195,7 +275,6 @@ class TestProtocolService(unittest.TestCase):
         protocol_vo = ProtocolFactory(domain_id=self.domain_id)
         params = {
             'protocol_id': protocol_vo.protocol_id,
-            'version': plugin_version,
             'options': update_options,
             'domain_id': self.domain_id
         }
@@ -209,7 +288,7 @@ class TestProtocolService(unittest.TestCase):
 
         self.assertIsInstance(new_protocol_vo, Protocol)
         self.assertEqual(new_protocol_vo.protocol_id, protocol_vo.protocol_id)
-        self.assertEqual(params['version'], new_protocol_vo.plugin_info.version)
+        self.assertEqual(updated_version, new_protocol_vo.plugin_info.version)
         self.assertEqual(params['options'], new_protocol_vo.plugin_info.options)
 
     @patch.object(MongoModel, 'connect', return_value=None)
