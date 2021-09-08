@@ -31,15 +31,20 @@ class PluginConnector(BaseConnector):
         if len(self.config['endpoint']) > 1:
             raise ERROR_CONNECTOR_CONFIGURATION(backend=self.__class__.__name__)
 
-    def get_plugin_endpoint(self, plugin_id, version, domain_id, **kwargs):
-        response = self.client.Plugin.get_plugin_endpoint({
+    def get_plugin_endpoint(self, plugin_id, domain_id, **kwargs):
+        request = {
             'plugin_id': plugin_id,
-            'version': version,
             'labels': kwargs.get('labels', {}),
             'domain_id': domain_id
-        }, metadata=self.transaction.get_connection_meta())
+        }
 
-        return response.endpoint
+        if 'version' in kwargs:
+            request.update({
+                'version': kwargs.get('version')
+            })
+
+        response = self.client.Plugin.get_plugin_endpoint(request, metadata=self.transaction.get_connection_meta())
+        return self._change_message(response)
 
     @staticmethod
     def _change_message(message):
