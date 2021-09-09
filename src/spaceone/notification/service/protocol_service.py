@@ -259,9 +259,12 @@ class ProtocolService(BaseService):
         protocol_id = params['protocol_id']
         domain_id = params['domain_id']
 
-        # Create Default Protocol if protocol is not exited
-        self._create_default_protocol(domain_id)
-        self._initialize_protocol(domain_id)
+        try:
+            # Create Default Protocol if protocol is not exited
+            self._create_default_protocol(domain_id)
+            self._initialize_protocol(domain_id)
+        except Exception as e:
+            _LOGGER.error(f'[_initialize_protocol] {e}')
 
         return self.protocol_mgr.get_protocol(protocol_id, domain_id, params.get('only'))
 
@@ -290,9 +293,12 @@ class ProtocolService(BaseService):
         domain_id = params['domain_id']
         query = params.get('query', {})
 
-        # Create Default Protocol if protocol is not exited
-        self._create_default_protocol(domain_id)
-        self._initialize_protocol(domain_id)
+        try:
+            # Create Default Protocol if protocol is not exited
+            self._create_default_protocol(domain_id)
+            self._initialize_protocol(domain_id)
+        except Exception as e:
+            _LOGGER.error(f'[_initialize_protocol] {e}')
 
         return self.protocol_mgr.list_protocols(query)
 
@@ -388,13 +394,13 @@ class ProtocolService(BaseService):
         query = {'filter': [{'k': 'domain_id', 'v': domain_id, 'o': 'eq'}]}
         protocol_vos, total_count = self.protocol_mgr.list_protocols(query)
 
-        installed_protocol_names = [protocol_vo.name for protocol_vo in protocol_vos]
-        _LOGGER.debug(f'[_initialize_protocol] Installed Plugins : {installed_protocol_names}')
+        installed_protocol_ids = [protocol_vo.plugin_info.plugin_id for protocol_vo in protocol_vos]
+        _LOGGER.debug(f'[_initialize_protocol] Installed Plugins : {installed_protocol_ids}')
 
         global_conf = config.get_global()
         for _protocol in global_conf.get('INSTALLED_PROTOCOL_PLUGINS', []):
-            if _protocol['name'] not in installed_protocol_names:
-                _LOGGER.debug(f'[_initialize_protocol] Create init protocol: {_protocol["name"]}')
+            if _protocol['plugin_info']['plugin_id'] not in installed_protocol_ids:
+                _LOGGER.debug(f'[_initialize_protocol] Create init protocol: {_protocol["plugin_info"]["plugin_id"]}')
                 _protocol['domain_id'] = domain_id
                 self.create(_protocol)
 

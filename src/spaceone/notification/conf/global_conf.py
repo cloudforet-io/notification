@@ -80,7 +80,7 @@ INSTALLED_PROTOCOL_PLUGINS = [
     # {
     #     'name': 'Email',
     #     'plugin_info': {
-    #         'plugin_id': 'plugin-email-notification-protocol',
+    #         'plugin_id': 'plugin-email-noti-protocol',
     #         'version': '1.0',
     #         'options': {},
     #         'secret_data': {}
