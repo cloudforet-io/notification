@@ -356,6 +356,8 @@ class ProtocolService(BaseService):
 
     @staticmethod
     def _check_plugin_info(plugin_info_params):
+        _LOGGER.debug(f'[check_plugin_info]: {plugin_info_params}')
+
         if 'plugin_id' not in plugin_info_params:
             raise ERROR_REQUIRED_PARAMETER(key='plugin_info.plugin_id')
 
