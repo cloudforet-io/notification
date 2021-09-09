@@ -18,6 +18,8 @@ class PluginManager(BaseManager):
             'NotificationPluginConnector')
 
     def initialize(self, plugin_info, domain_id):
+        _LOGGER.debug(f'[initialize] plugin_inf: {plugin_info}')
+
         plugin_id = plugin_info['plugin_id']
         upgrade_mode = plugin_info.get('upgrade_mode', 'AUTO')
 
