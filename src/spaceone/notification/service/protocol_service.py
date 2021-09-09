@@ -261,7 +261,7 @@ class ProtocolService(BaseService):
 
         # Create Default Protocol if protocol is not exited
         self._create_default_protocol(domain_id)
-        self._initialize_protocol(domain_id)
+        self._initialize_protocols(domain_id)
 
         return self.protocol_mgr.get_protocol(protocol_id, domain_id, params.get('only'))
 
@@ -292,7 +292,7 @@ class ProtocolService(BaseService):
 
         # Create Default Protocol if protocol is not exited
         self._create_default_protocol(domain_id)
-        self._initialize_protocol(domain_id)
+        self._initialize_protocols(domain_id)
 
         return self.protocol_mgr.list_protocols(query)
 
@@ -382,7 +382,7 @@ class ProtocolService(BaseService):
         return True
 
     @cache.cacheable(key='init-protocol:{domain_id}', expire=300)
-    def _initialize_protocol(self, domain_id):
+    def _initialize_protocols(self, domain_id):
         _LOGGER.debug(f'[_initialize_protocol] domain_id: {domain_id}')
 
         query = {'filter': [{'k': 'domain_id', 'v': domain_id, 'o': 'eq'}]}
