@@ -43,6 +43,8 @@ class PluginConnector(BaseConnector):
                 'version': kwargs.get('version')
             })
 
+        _LOGGER.debug(f'[get_plugin_endpoint]: request: {request}')
+
         response = self.client.Plugin.get_plugin_endpoint(request, metadata=self.transaction.get_connection_meta())
         return self._change_message(response)
 
