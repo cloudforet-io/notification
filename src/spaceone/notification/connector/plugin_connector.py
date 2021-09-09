@@ -39,11 +39,9 @@ class PluginConnector(BaseConnector):
         }
 
         if 'version' in kwargs:
-            request.update({
-                'version': kwargs.get('version')
-            })
-
-        _LOGGER.debug(f'[get_plugin_endpoint]: request: {request}')
+            request.update({'version': kwargs.get('version')})
+        else:
+            request.update({'upgrade_mode': 'AUTO'})
 
         response = self.client.Plugin.get_plugin_endpoint(request, metadata=self.transaction.get_connection_meta())
         return self._change_message(response)
