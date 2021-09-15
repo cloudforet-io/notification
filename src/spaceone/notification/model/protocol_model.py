@@ -11,6 +11,9 @@ class PluginInfo(EmbeddedDocument):
     schema = StringField(max_length=255)
     upgrade_mode = StringField(max_length=255, choices=('AUTO', 'MANUAL'), default='AUTO')
 
+    def to_dict(self):
+        return dict(self.to_mongo())
+
 
 class Protocol(MongoModel):
     protocol_id = StringField(max_length=40, generate_id='protocol', unique=True)
