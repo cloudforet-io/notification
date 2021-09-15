@@ -287,30 +287,37 @@ class NotificationService(BaseService):
         secret_mgr: SecretManager = self.locator.get_manager('SecretManager')
 
         if protocol_vo.state == 'ENABLED':
-            plugin_info = protocol_vo.plugin_info
+            plugin_info = protocol_vo.plugin_info.to_dict()
+
             secret_data = {}
             channel_data = {}
+            metadata = plugin_info.get('metadata', {})
+            options = plugin_info.get('options', {})
 
-            if secret_id := plugin_info.secret_id:
+            if secret_id := plugin_info.get('secret_id'):
                 secret_data = secret_mgr.get_secret_data(secret_id, domain_id)
 
-            if plugin_info.metadata['data_type'] == 'PLAIN_TEXT':
+            if metadata.get('data_type') == 'PLAIN_TEXT':
                 channel_data = channel_vo.data
-            elif plugin_info.metadata['data_type'] == 'SECRET':
+            elif metadata.get('data_type') == 'SECRET':
                 channel_data = secret_mgr.get_secret_data(channel_vo.secret_id, domain_id)
 
-            _LOGGER.debug(f'[Plugin Initialize] plugin_id: {plugin_info.plugin_id} | version: {plugin_info.version} '
+            _LOGGER.debug(f'[Plugin Initialize] plugin_id: {plugin_info["plugin_id"]} | version: {plugin_info["version"]} '
                           f'| domain_id: {domain_id}')
             try:
-                plugin_info_dict = {
-                    'plugin_id': plugin_info.plugin_id,
-                    'version': plugin_info.version,
-                    'options': plugin_info.options,
-                    'upgrade_mode': plugin_info.upgrade_mode
-                }
+                endpoint_info = plugin_mgr.initialize(plugin_info, domain_id)
+                plugin_metadata = plugin_mgr.init_plugin(options)
 
-                plugin_mgr.initialize(plugin_info_dict, domain_id)
-                plugin_mgr.dispatch_notification(secret_data, channel_data, notification_type, message, plugin_info.options)
+                plugin_info['metadata'] = plugin_metadata
+
+                if version := endpoint_info.get('updated_version'):
+                    plugin_info['version'] = version
+
+                protocol_mgr = self.locator.get_manager('ProtocolManager')
+                protocol_mgr.update_protocol_by_vo({'plugin_info': plugin_info}, protocol_vo)
+
+                plugin_mgr.dispatch_notification(secret_data, channel_data, notification_type,
+                                                 message, plugin_info.get('options', {}))
             except Exception as e:
                 _LOGGER.error(f'[Notification] Plugin Error: {e}')
         else:

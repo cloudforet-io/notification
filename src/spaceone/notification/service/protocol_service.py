@@ -63,7 +63,7 @@ class ProtocolService(BaseService):
 
         request_plugin = {
             'plugin_id': plugin_info['plugin_id'],
-            'options': plugin_info['options'],
+            'options': plugin_info.get('options', {}),
             'metadata': plugin_metadata
         }
 
@@ -139,39 +139,31 @@ class ProtocolService(BaseService):
         protocol_id = params['protocol_id']
         domain_id = params['domain_id']
 
-        options = params.get('options')
         protocol_vo = self.protocol_mgr.get_protocol(protocol_id, domain_id)
 
-        plugin_info = protocol_vo.plugin_info
+        plugin_info = protocol_vo.plugin_info.to_dict()
 
-        plugin_info_dict = {
-            'plugin_id': plugin_info.plugin_id,
-            'version': plugin_info.version,
-            'options': plugin_info.options,
-            'upgrade_mode': plugin_info.upgrade_mode
-        }
+        if plugin_info['upgrade_mode'] == 'AUTO':
+            plugin_metadata, endpoint_info = self._init_plugin(plugin_info, domain_id)
 
-        if plugin_info.upgrade_mode == 'AUTO':
-            plugin_metadata, endpoint_info = self._init_plugin(plugin_info_dict, domain_id)
-
-            plugin_info.metadata = plugin_metadata
+            plugin_info['metadata'] = plugin_metadata
 
             if version := endpoint_info.get('updated_version'):
-                plugin_info.version = version
+                plugin_info['version'] = version
         else:
             if version := params.get('version'):
                 # Update plugin_version
-                plugin_id = plugin_info.plugin_id
+                plugin_id = plugin_info['plugin_id']
 
                 repo_mgr = self.locator.get_manager('RepositoryManager')
                 repo_mgr.check_plugin_version(plugin_id, version, domain_id)
 
-                plugin_info.version = version
-                plugin_info.metadata = self._init_plugin(plugin_info_dict, domain_id)
+                plugin_info['version'] = version
+                plugin_info['metadata'] = self._init_plugin(plugin_info, domain_id)
 
-        if options or options == {}:
+        if options := params.get('options', {}):
             # Overwrite
-            plugin_info.options = options
+            plugin_info['options'] = options
 
         params = {
             'protocol_id': protocol_id,
@@ -328,7 +320,7 @@ class ProtocolService(BaseService):
         return plugin_info
 
     def _init_plugin(self, plugin_info, domain_id):
-        options = plugin_info['options']
+        options = plugin_info.get('options', {})
 
         plugin_mgr: PluginManager = self.locator.get_manager('PluginManager')
         endpoint_info = plugin_mgr.initialize(plugin_info, domain_id)
