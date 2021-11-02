@@ -1,9 +1,7 @@
 import logging
 
 from spaceone.core.manager import BaseManager
-from spaceone.notification.error import *
-from spaceone.notification.manager.protocol_manager import ProtocolManager
-from spaceone.notification.connector.plugin_connector import PluginConnector
+from spaceone.core.connector.space_connector import SpaceConnector
 from spaceone.notification.connector.notification_plugin_connector import NotificationPluginConnector
 
 _LOGGER = logging.getLogger(__name__)
@@ -13,7 +11,7 @@ class PluginManager(BaseManager):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.plugin_connector: PluginConnector = self.locator.get_connector('PluginConnector')
+        self.plugin_connector: SpaceConnector = self.locator.get_connector('SpaceConnector', service='plugin')
         self.noti_plugin_connector: NotificationPluginConnector = self.locator.get_connector(
             'NotificationPluginConnector')
 
@@ -24,9 +22,15 @@ class PluginManager(BaseManager):
         upgrade_mode = plugin_info.get('upgrade_mode', 'AUTO')
 
         if upgrade_mode == 'AUTO':
-            endpoint_response = self.plugin_connector.get_plugin_endpoint(plugin_id, domain_id)
+            endpoint_response = self.plugin_connector.dispatch('Plugin.get_plugin_endpoint',
+                                                               {'plugin_id': plugin_id,
+                                                                'domain_id': domain_id,
+                                                                'upgrade_mode': 'AUTO'})
         else:
-            endpoint_response = self.plugin_connector.get_plugin_endpoint(plugin_id, domain_id, version=plugin_info.get('version'))
+            endpoint_response = self.plugin_connector.dispatch('Plugin.get_plugin_endpoint',
+                                                               {'plugin_id': plugin_id,
+                                                                'domain_id': domain_id,
+                                                                'version': plugin_info.get('version')})
 
         endpoint = endpoint_response['endpoint']
         _LOGGER.debug(f'[init_plugin] endpoint: {endpoint}')
