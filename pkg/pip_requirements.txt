@@ -5,3 +5,4 @@ langcodes
 redis
 fakeredis
 mongomock
+boto3
