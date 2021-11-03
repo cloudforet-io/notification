@@ -46,25 +46,7 @@ HANDLERS = {
 }
 
 CONNECTORS = {
-    'IdentityConnector': {
-        'endpoint': {
-            'v1': 'grpc://localhost:50051'
-        }
-    },
     'PluginServiceConnector': {
-        'endpoint': {
-            'v1': 'grpc://plugin:50051'
-        }
-    },
-    'SecretConnector': {
-        'endpoint': {
-            'v1': 'grpc://secret:50051'
-        }
-    },
-    'RepositoryConnector': {
-        'endpoint': {
-            'v1': 'grpc://repository:50051'
-        }
     },
     'SpaceConnector': {
         'backend': 'spaceone.core.connector.space_connector.SpaceConnector',
