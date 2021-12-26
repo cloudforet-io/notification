@@ -23,6 +23,9 @@ class Notification(MongoModel):
             'notification_type',
             'notification_level',
         ],
+        'change_query_keys': {
+            'user_self': 'user_id'
+        },
         'ordering': ['name'],
         'indexes': [
             'notification_id',

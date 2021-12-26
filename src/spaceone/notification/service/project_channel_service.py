@@ -276,9 +276,8 @@ class ProjectChannelService(BaseService):
     })
     @check_required(['domain_id'])
     @append_query_filter(['project_channel_id', 'name', 'state', 'secret_id', 'is_subscribe', 'is_scheduled',
-                          'notification_level', 'protocol_id', 'project_id', 'user_projects', 'domain_id'])
-    @change_tag_filter('tags')
-    @append_keyword_filter(['project_channel_id'])
+                          'notification_level', 'protocol_id', 'project_id', 'domain_id', 'user_projects'])
+    @append_keyword_filter(['project_channel_id', 'name'])
     def list(self, params):
         """ List Project Channels
 
@@ -293,8 +292,9 @@ class ProjectChannelService(BaseService):
                 'notification_level': 'str',
                 'protocol_id': 'str',
                 'project_id': 'str',
+                'domain_id': 'str',
                 'query': 'dict (spaceone.api.core.v1.Query)',
-                'domain_id': 'str'
+                'user_projects': 'list', // from meta
             }
 
         Returns:
@@ -310,13 +310,14 @@ class ProjectChannelService(BaseService):
     })
     @check_required(['query', 'domain_id'])
     @append_query_filter(['domain_id', 'user_projects'])
-    @change_tag_filter('tags')
     @append_keyword_filter(['project_channel_id', 'name'])
     def stat(self, params):
         """
         Args:
             params (dict): {
-                'query': 'dict (spaceone.api.core.v1.StatisticsQuery)'
+                'domain_id': 'str',
+                'query': 'dict (spaceone.api.core.v1.StatisticsQuery)',
+                'user_projects': 'list', // from meta
             }
 
         Returns:
