@@ -2,6 +2,7 @@ import logging
 from datetime import datetime
 
 from spaceone.core.service import *
+from spaceone.core.utils import *
 from spaceone.notification.lib.schedule import *
 from spaceone.notification.manager import IdentityManager
 from spaceone.notification.manager import NotificationManager
@@ -145,6 +146,31 @@ class NotificationService(BaseService):
         self.notification_mgr.create_notification(params)
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
+    @check_required(['protocol_id', 'data', 'message', 'domain_id'])
+    def push(self, params):
+        """ Push notification
+
+        Args:
+            params (dict): {
+                'protocol_di': 'str',
+                'data': 'str',
+                'message': 'dict',
+                'notification_type', 'str',
+                'domain_id': 'str'
+            }
+
+        Returns:
+            None
+        """
+        domain_id = params['domain_id']
+
+        protocol_mgr: ProtocolManager = self.locator.get_manager('ProtocolManager')
+        protocol_vo = protocol_mgr.get_protocol(params['protocol_id'], domain_id)
+
+        self.dispatch_notification(protocol_vo, None, params.get('notification_type', 'INFO'),
+                                   params.get('message', {}), domain_id, data=params['data'])
+
+    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['notification_id', 'domain_id'])
     def delete(self, params):
         """ Delete notification
@@ -277,12 +303,12 @@ class NotificationService(BaseService):
             None
         """
 
-        now = datetime.now() - datetime.timedelta(days=4)
-        now.strftime('%Y-%m-%dT%H:%M:%S')
+        condition_date = datetime.now() - datetime.timedelta(days=4)
+        condition_date_iso = datetime_to_iso8601(condition_date)
 
-        # query = {'filter': [{'k': 'protocol_id', 'v': protocol_vo.protocol_id, 'o': 'eq'}]}
+        query = {'filter': [{'k': 'created_at', 'v': condition_date_iso, 'o': 'datetime_lte'}]}
 
-    def dispatch_notification(self, protocol_vo, channel_vo, notification_type, message, domain_id):
+    def dispatch_notification(self, protocol_vo, channel_vo, notification_type, message, domain_id, **kwargs):
         plugin_mgr: PluginManager = self.locator.get_manager('PluginManager')
         secret_mgr: SecretManager = self.locator.get_manager('SecretManager')
 
@@ -297,7 +323,9 @@ class NotificationService(BaseService):
             if secret_id := plugin_info.get('secret_id'):
                 secret_data = secret_mgr.get_secret_data(secret_id, domain_id)
 
-            if metadata.get('data_type') == 'PLAIN_TEXT':
+            if 'data' in kwargs:
+                channel_data = kwargs.get('data')
+            elif metadata.get('data_type') == 'PLAIN_TEXT':
                 channel_data = channel_vo.data
             elif metadata.get('data_type') == 'SECRET':
                 channel_data = secret_mgr.get_secret_data(channel_vo.secret_id, domain_id)
