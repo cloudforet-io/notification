@@ -260,8 +260,7 @@ class ProtocolService(BaseService):
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['domain_id'])
     @append_query_filter(['protocol_id', 'name', 'state', 'protocol_type', 'domain_id'])
-    @change_tag_filter('tags')
-    @append_keyword_filter(['protocol_id'])
+    @append_keyword_filter(['protocol_id', 'name'])
     def list(self, params):
         """ List protocol
 
@@ -271,8 +270,8 @@ class ProtocolService(BaseService):
                 'name': 'str',
                 'state': 'str',
                 'protocol_type',
-                'query': 'dict (spaceone.api.core.v1.Query)',
-                'domain_id': 'str'
+                'domain_id': 'str',
+                'query': 'dict (spaceone.api.core.v1.Query)'
             }
 
         Returns:
@@ -291,12 +290,12 @@ class ProtocolService(BaseService):
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['query', 'domain_id'])
     @append_query_filter(['domain_id'])
-    @change_tag_filter('tags')
     @append_keyword_filter(['protocol_id', 'name'])
     def stat(self, params):
         """
         Args:
             params (dict): {
+                'domain_id': 'str',
                 'query': 'dict (spaceone.api.core.v1.StatisticsQuery)'
             }
 

@@ -24,7 +24,7 @@ class UserChannelService(BaseService):
         self.protocol_mgr: ProtocolManager = self.locator.get_manager('ProtocolManager')
         self.secret_mgr: SecretManager = self.locator.get_manager('SecretManager')
 
-    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
+    @transaction(append_meta={'authorization.scope': 'USER'})
     @check_required(['protocol_id', 'name', 'data', 'user_id', 'domain_id'])
     def create(self, params):
         """ Create user Channel
@@ -91,7 +91,7 @@ class UserChannelService(BaseService):
 
         return self.user_channel_mgr.create_user_channel(params)
 
-    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
+    @transaction(append_meta={'authorization.scope': 'USER'})
     @check_required(['user_channel_id', 'domain_id'])
     def update(self, params):
         """ Update user channel
@@ -126,7 +126,7 @@ class UserChannelService(BaseService):
 
         return self.user_channel_mgr.update_user_channel_by_vo(params, user_channel_vo)
 
-    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
+    @transaction(append_meta={'authorization.scope': 'USER'})
     @check_required(['user_channel_id', 'domain_id'])
     def set_schedule(self, params):
         """
@@ -157,7 +157,7 @@ class UserChannelService(BaseService):
 
         return self.user_channel_mgr.update_user_channel_by_vo(params, user_channel_vo)
 
-    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
+    @transaction(append_meta={'authorization.scope': 'USER'})
     @check_required(['user_channel_id', 'domain_id'])
     def set_subscription(self, params):
         """
@@ -181,7 +181,7 @@ class UserChannelService(BaseService):
 
         return self.user_channel_mgr.update_user_channel(params)
 
-    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
+    @transaction(append_meta={'authorization.scope': 'USER'})
     @check_required(['user_channel_id', 'domain_id'])
     def delete(self, params):
         """ Delete user channel
@@ -205,7 +205,7 @@ class UserChannelService(BaseService):
 
         self.user_channel_mgr.delete_user_channel_by_vo(user_channel_vo)
 
-    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
+    @transaction(append_meta={'authorization.scope': 'USER'})
     @check_required(['user_channel_id', 'domain_id'])
     def enable(self, params):
         """ Enable user channel
@@ -222,7 +222,7 @@ class UserChannelService(BaseService):
 
         return self.user_channel_mgr.enable_user_channel(params['user_channel_id'], params['domain_id'])
 
-    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
+    @transaction(append_meta={'authorization.scope': 'USER'})
     @check_required(['user_channel_id', 'domain_id'])
     def disable(self, params):
         """ Disable user channel
@@ -239,7 +239,7 @@ class UserChannelService(BaseService):
 
         return self.user_channel_mgr.disable_user_channel(params['user_channel_id'], params['domain_id'])
 
-    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
+    @transaction(append_meta={'authorization.scope': 'USER'})
     @check_required(['user_channel_id', 'domain_id'])
     def get(self, params):
         """ Get User Channel
@@ -256,11 +256,14 @@ class UserChannelService(BaseService):
 
         return self.user_channel_mgr.get_user_channel(params['user_channel_id'], params['domain_id'], params.get('only'))
 
-    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
+    @transaction(append_meta={
+        'authorization.scope': 'USER',
+        'mutation.append_parameter': {'user_self': 'user_id'}
+    })
     @check_required(['domain_id'])
-    @append_query_filter(['user_channel_id', 'name', 'state', 'secret_id', 'protocol_id', 'user_id', 'domain_id'])
-    @change_tag_filter('tags')
-    @append_keyword_filter(['user_channel_id'])
+    @append_query_filter(['user_channel_id', 'name', 'state', 'secret_id', 'protocol_id', 'user_id', 'domain_id',
+                          'user_self'])
+    @append_keyword_filter(['user_channel_id', 'name'])
     def list(self, params):
         """ List User Channels
 
@@ -272,8 +275,9 @@ class UserChannelService(BaseService):
                 'secret_id': 'str',
                 'protocol_id': 'str',
                 'user_id': 'str',
+                'domain_id': 'str',
                 'query': 'dict (spaceone.api.core.v1.Query)',
-                'domain_id': 'str'
+                'user_self': 'str', // from meta
             }
 
         Returns:
@@ -284,16 +288,20 @@ class UserChannelService(BaseService):
         query = params.get('query', {})
         return self.user_channel_mgr.list_user_channels(query)
 
-    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
+    @transaction(append_meta={
+        'authorization.scope': 'USER',
+        'mutation.append_parameter': {'user_self': 'user_id'}
+    })
     @check_required(['query', 'domain_id'])
-    @append_query_filter(['domain_id'])
-    @change_tag_filter('tags')
+    @append_query_filter(['domain_id', 'user_self'])
     @append_keyword_filter(['user_channel_id', 'name'])
     def stat(self, params):
         """
         Args:
             params (dict): {
-                'query': 'dict (spaceone.api.core.v1.StatisticsQuery)'
+                'domain_id': 'str',
+                'query': 'dict (spaceone.api.core.v1.StatisticsQuery)',
+                'user_self': 'str', // from meta
             }
 
         Returns:

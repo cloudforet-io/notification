@@ -36,6 +36,9 @@ class UserChannel(MongoModel):
             'name',
             'state',
         ],
+        'change_query_keys': {
+            'user_self': 'user_id'
+        },
         'ordering': ['name'],
         'indexes': [
             'user_channel_id',
