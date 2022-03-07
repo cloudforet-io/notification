@@ -30,7 +30,6 @@ class NotificationService(BaseService):
     @check_required(['resource_type', 'resource_id', 'topic', 'message', 'domain_id'])
     def create(self, params):
         """ Create Notification
-
         Args:
             params (dict): {
                 'resource_type': 'str' -> identity.Project | identity.User,
@@ -41,7 +40,6 @@ class NotificationService(BaseService):
                 'notification_level': 'str' -> ALL(default) | LV1 | LV2 | LV3 | LV4 | LV5,
                 'domain_id': 'str'
             }
-
         Returns:
             notification_vo (object)
         """
@@ -149,7 +147,6 @@ class NotificationService(BaseService):
     @check_required(['protocol_id', 'data', 'message', 'domain_id'])
     def push(self, params):
         """ Push notification
-
         Args:
             params (dict): {
                 'protocol_di': 'str',
@@ -158,7 +155,6 @@ class NotificationService(BaseService):
                 'notification_type', 'str',
                 'domain_id': 'str'
             }
-
         Returns:
             None
         """
@@ -170,17 +166,15 @@ class NotificationService(BaseService):
         self.dispatch_notification(protocol_vo, None, params.get('notification_type', 'INFO'),
                                    params.get('message', {}), domain_id, data=params['data'])
 
-    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
+    @transaction(append_meta={'authorization.scope': 'USER'})
     @check_required(['notification_id', 'domain_id'])
     def delete(self, params):
         """ Delete notification
-
         Args:
             params (dict): {
-                'user_channel_id': 'str',
+                'notification_id': 'str',
                 'domain_id': 'str'
             }
-
         Returns:
             None
         """
@@ -188,53 +182,47 @@ class NotificationService(BaseService):
         self.notification_mgr.delete_notification(params['notification_id'],
                                                   params['domain_id'])
 
-    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
+    @transaction(append_meta={'authorization.scope': 'USER'})
     @check_required(['notifications', 'domain_id'])
     def set_read(self, params):
         """  Change the notifications to read status.
-
         Args:
             params (dict): {
                 'notifications': 'list',
                 'domain_id': 'str'
             }
-
         Returns:
             None
         """
 
         self.notification_mgr.set_read_notification(params['notifications'], params['domain_id'])
 
-    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
+    @transaction(append_meta={'authorization.scope': 'USER'})
     @check_required(['users', 'domain_id'])
     def delete_all(self, params):
         """  Delete all notifications of target users
-
         Args:
             params (dict): {
                 'users': 'list',
                 'domain_id': 'str'
             }
-
         Returns:
             None
         """
 
         self.notification_mgr.delete_all_notifications(params['users'], params['domain_id'])
 
-    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
+    @transaction(append_meta={'authorization.scope': 'USER'})
     @check_required(['notification_id', 'domain_id'])
     def get(self, params):
 
         """ Get Notification
-
         Args:
             params (dict): {
                 'domain_id': 'str',
                 'only': 'list',
                 'set_read': 'bool'
             }
-
         Returns:
             notification_vo (object)
         """
@@ -242,28 +230,29 @@ class NotificationService(BaseService):
         return self.notification_mgr.get_notification(params['notification_id'], params['domain_id'],
                                                       params.get('only'))
 
-    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
+    @transaction(append_meta={
+        'authorization.scope': 'USER',
+        'mutation.append_parameter': {'user_self': 'user_id'}
+    })
     @check_required(['domain_id'])
-    @append_query_filter(['notification_id', 'topic', 'notification_type', 'notification_level', 'is_read', 'project_id', 'user_id', 'domain_id'])
-    @change_tag_filter('tags')
-    @append_keyword_filter(['user_channel_id'])
+    @append_query_filter(['notification_id', 'topic', 'notification_type', 'notification_level', 'is_read',
+                          'project_id', 'user_id', 'domain_id', 'user_self'])
+    @append_keyword_filter(['notification_id', 'topic'])
     def list(self, params):
         """ List User Channels
-
         Args:
             params (dict): {
-                'user_channel_id': 'str',
-                'name': 'str',
-                'state': 'str',
-                'schema': 'str',
-                'secret_id': 'str',
-                'protocol_id': 'str',
-                'user_id': 'str',
+                'notification_id': 'str',
+                'topic': 'str',
+                'notification_type': 'str',
+                'notification_level': 'str',
                 'is_read': 'bool',
+                'project_id': 'str',
+                'user_id': 'str',
+                'domain_id': 'str',
                 'query': 'dict (spaceone.api.core.v1.Query)',
-                'domain_id': 'str'
+                'user_self': 'str', // from meta
             }
-
         Returns:
             results (list): 'list of user_channel_vo'
             total_count (int)
@@ -272,18 +261,21 @@ class NotificationService(BaseService):
         query = params.get('query', {})
         return self.notification_mgr.list_notifications(query)
 
-    @transaction(append_meta={'authorization.scope': 'DOMAIN'})
+    @transaction(append_meta={
+        'authorization.scope': 'USER',
+        'mutation.append_parameter': {'user_self': 'user_id'}
+    })
     @check_required(['query', 'domain_id'])
-    @append_query_filter(['domain_id'])
-    @change_tag_filter('tags')
+    @append_query_filter(['domain_id', 'user_self'])
     @append_keyword_filter(['notification_id', 'topic'])
     def stat(self, params):
         """
         Args:
             params (dict): {
-                'query': 'dict (spaceone.api.core.v1.StatisticsQuery)'
+                'domain_id': 'str',
+                'query': 'dict (spaceone.api.core.v1.StatisticsQuery)',
+                'user_self': 'str', // from meta
             }
-
         Returns:
             values (list): 'list of statistics data'
             total_count (int)
@@ -295,10 +287,8 @@ class NotificationService(BaseService):
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     def delete_old_notifications(self, params):
         """ Delete old notifications
-
         Args:
             params (dict): {}
-
         Returns:
             None
         """
