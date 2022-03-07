@@ -16,6 +16,10 @@ from spaceone.notification.connector.plugin_connector import PluginConnector
 from spaceone.notification.connector.repository_connector import RepositoryConnector
 from spaceone.notification.connector.secret_connector import SecretConnector
 from spaceone.notification.connector.identity_connector import IdentityConnector
+from spaceone.core.connector.space_connector import SpaceConnector
+
+from spaceone.notification.manager.plugin_manager import PluginManager
+
 from spaceone.notification.info.notification_info import *
 from spaceone.notification.info.common_info import StatisticsInfo
 from test.factory.notification_factory import NotificationFactory
@@ -29,6 +33,8 @@ class TestProtocolService(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         config.init_conf(package='spaceone.notification')
+        config.set_service_config()
+        config.set_global(MOCK_MODE=True)
         connect('test', host='mongomock://localhost')
 
         cls.domain_id = utils.generate_id('domain')
@@ -129,6 +135,31 @@ class TestProtocolService(unittest.TestCase):
         self.transaction.method = 'create'
         notification_svc = NotificationService(transaction=self.transaction)
         notification_svc.create(params.copy())
+
+    @patch.object(MongoModel, 'connect', return_value=None)
+    @patch.object(SecretConnector, '__init__', return_value=None)
+    @patch.object(PluginConnector, '__init__', return_value=None)
+    @patch.object(IdentityConnector, '__init__', return_value=None)
+    @patch.object(NotificationPluginConnector, 'dispatch_notification', return_value=None)
+    @patch.object(IdentityConnector, 'get_user', return_value={'user_id': 'bluese05'})
+    @patch.object(SecretConnector, 'list_secrets', return_value={'total_count': 1})
+    @patch.object(SecretConnector, 'get_secret_data', return_value={'data': {'xxxx': 'yyyy'}})
+    def test_push_notification(self, *args):
+        protocol_vo = ProtocolFactory(domain_id=self.domain_id)
+
+        params = {
+            'protocol_id': protocol_vo.protocol_id,
+            'data': '',
+            'message': {
+                'message': 'TEST..'
+            },
+            'notification_type': 'ERROR',
+            'domain_id': self.domain_id,
+        }
+
+        self.transaction.method = 'push'
+        notification_svc = NotificationService(transaction=self.transaction)
+        notification_svc.push(params.copy())
 
     @patch.object(MongoModel, 'connect', return_value=None)
     def test_delete_notification(self, *args):
