@@ -1,8 +1,8 @@
 import logging
-from datetime import datetime
+import datetime
 
 from spaceone.core.service import *
-from spaceone.core.utils import *
+from spaceone.core import utils
 from spaceone.notification.lib.schedule import *
 from spaceone.notification.manager import IdentityManager
 from spaceone.notification.manager import NotificationManager
@@ -293,8 +293,8 @@ class NotificationService(BaseService):
             None
         """
 
-        condition_date = datetime.now() - datetime.timedelta(days=4)
-        condition_date_iso = datetime_to_iso8601(condition_date)
+        condition_date = datetime.datetime.now() - datetime.timedelta(days=4)
+        condition_date_iso = utils.datetime_to_iso8601(condition_date)
 
         query = {'filter': [{'k': 'created_at', 'v': condition_date_iso, 'o': 'datetime_lte'}]}
 
@@ -344,7 +344,7 @@ class NotificationService(BaseService):
     @staticmethod
     def check_schedule_for_dispatch(is_scheduled, schedule):
         if is_scheduled:
-            now_time = datetime.now(tz=None)    # UTC
+            now_time = datetime.datetime.utcnow()
 
             valid_weekday = check_weekday_schedule(now_time, schedule.day_of_week)
             valid_time = check_time_schedule(now_time, schedule.start_hour, schedule.end_hour)
