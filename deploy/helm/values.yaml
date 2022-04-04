@@ -87,7 +87,7 @@ service:
 #    annotations:
 #        alb.ingress.kubernetes.io/scheme: internet-facing
 #    servicePort: 80
-#    path: /*
+#    path: /
 
 ################################
 # volumeMount per deployment
