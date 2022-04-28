@@ -31,6 +31,6 @@ def NotificationInfo(notification_vo: Notification, minimal=False):
     return notification_pb2.NotificationInfo(**info)
 
 
-def NotificationsInfo(notification_vo, total_count, **kwargs):
-    results = list(map(functools.partial(NotificationInfo, **kwargs), notification_vo))
+def NotificationsInfo(notification_vos, total_count, **kwargs):
+    results = list(map(functools.partial(NotificationInfo, **kwargs), notification_vos))
     return notification_pb2.NotificationsInfo(results=results, total_count=total_count)
