@@ -237,7 +237,7 @@ class ProtocolService(BaseService):
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['protocol_id', 'domain_id'])
     def get(self, params):
-        """ Disable domain
+        """ Get Protocol
 
         Args:
             params (dict): {

@@ -225,7 +225,6 @@ class NotificationService(BaseService):
     @transaction(append_meta={'authorization.scope': 'USER'})
     @check_required(['notification_id', 'domain_id'])
     def get(self, params):
-
         """ Get Notification
 
         Args:
