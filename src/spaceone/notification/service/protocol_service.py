@@ -31,7 +31,6 @@ class ProtocolService(BaseService):
     @check_required(['name', 'plugin_info', 'domain_id'])
     def create(self, params):
         """ Create Protocol
-
         Args:
             params (dict): {
                 'name': 'str',
@@ -44,6 +43,9 @@ class ProtocolService(BaseService):
         Returns:
             protocol_vo (object)
         """
+        return self._create(params)
+
+    def _create(self, params):
         domain_id = params['domain_id']
         plugin_info = params['plugin_info']
 
@@ -385,7 +387,7 @@ class ProtocolService(BaseService):
                 try:
                     _LOGGER.debug(f'[_initialize_protocol] Create init protocol: {_protocol["plugin_info"]["plugin_id"]}')
                     _protocol['domain_id'] = domain_id
-                    self.create(_protocol)
+                    self._create(_protocol)
                 except Exception as e:
                     _LOGGER.error(f'[_initialize_protocol] {e}')
 
