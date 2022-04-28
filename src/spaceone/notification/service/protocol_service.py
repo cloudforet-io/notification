@@ -341,18 +341,6 @@ class ProtocolService(BaseService):
         if prj_ch_total_count > 0 or user_ch_total_count > 0:
             raise EROR_DELETE_PROJECT_EXITED_CHANNEL(protocol_id=protocol_vo.protocol_id)
 
-    @staticmethod
-    def _check_plugin_info(plugin_info_params):
-        if 'plugin_id' not in plugin_info_params:
-            raise ERROR_REQUIRED_PARAMETER(key='plugin_info.plugin_id')
-
-        if 'secret_data' in plugin_info_params and 'schema' not in plugin_info_params:
-            raise ERROR_REQUIRED_PARAMETER(key='plugin_info.schema')
-
-        if 'upgrade_mode' in plugin_info_params and plugin_info_params['upgrade_mode'] == 'MANUAL':
-            if 'version' not in plugin_info_params:
-                raise ERROR_REQUIRED_PARAMETER(key='plugin_info.version')
-
     @cache.cacheable(key='default-protocol:{domain_id}', expire=300)
     def _create_default_protocol(self, domain_id):
         _LOGGER.debug(f'[_create_default_protocol] domain_id: {domain_id}')
@@ -392,3 +380,15 @@ class ProtocolService(BaseService):
                     _LOGGER.error(f'[_initialize_protocol] {e}')
 
         return True
+
+    @staticmethod
+    def _check_plugin_info(plugin_info_params):
+        if 'plugin_id' not in plugin_info_params:
+            raise ERROR_REQUIRED_PARAMETER(key='plugin_info.plugin_id')
+
+        if 'secret_data' in plugin_info_params and 'schema' not in plugin_info_params:
+            raise ERROR_REQUIRED_PARAMETER(key='plugin_info.schema')
+
+        if 'upgrade_mode' in plugin_info_params and plugin_info_params['upgrade_mode'] == 'MANUAL':
+            if 'version' not in plugin_info_params:
+                raise ERROR_REQUIRED_PARAMETER(key='plugin_info.version')
