@@ -11,10 +11,9 @@ from spaceone.core.transaction import Transaction
 from spaceone.notification.error import *
 from spaceone.notification.service.protocol_service import ProtocolService
 from spaceone.notification.model.protocol_model import Protocol
-from spaceone.notification.connector.notification_plugin_connector import NotificationPluginConnector
-from spaceone.notification.connector.plugin_connector import PluginConnector
-from spaceone.notification.connector.repository_connector import RepositoryConnector
-from spaceone.notification.connector.secret_connector import SecretConnector
+from spaceone.notification.manager.repository_manager import RepositoryManager
+from spaceone.notification.manager.secret_manager import SecretManager
+from spaceone.notification.manager.plugin_manager import PluginManager
 from spaceone.notification.info.protocol_info import *
 from spaceone.notification.info.common_info import StatisticsInfo
 from test.factory.protocol_factory import ProtocolFactory
@@ -47,17 +46,14 @@ class TestProtocolService(unittest.TestCase):
         protocol_vos.delete()
 
     @patch.object(MongoModel, 'connect', return_value=None)
-    @patch.object(RepositoryConnector, '__init__', return_value=None)
-    @patch.object(SecretConnector, '__init__', return_value=None)
-    @patch.object(SecretConnector, 'create_secret', return_value={'secret_id': 'secret-xyz', 'name': 'Secret'})
-    @patch.object(PluginConnector, '__init__', return_value=None)
-    @patch.object(PluginConnector, 'get_plugin_endpoint', return_value={'endpoint': 'grpc://plugin.spaceone.dev:50051', 'updated_version': '1.2'})
-    @patch.object(NotificationPluginConnector, 'initialize', return_value=None)
-    @patch.object(SecretConnector, 'get_secret_data', return_value={'data': {}})
-    @patch.object(RepositoryConnector, 'get_plugin_versions', return_value=['1.2', '1.1', '1.0'])
-    @patch.object(RepositoryConnector, 'get_plugin')
-    @patch.object(SecretConnector, 'list_secrets')
-    @patch.object(NotificationPluginConnector, 'init')
+    @patch.object(RepositoryManager, '__init__', return_value=None)
+    @patch.object(RepositoryManager, 'get_plugin', return_value={'capability': {'supported_schema': {}}})
+    @patch.object(RepositoryManager, 'check_plugin_version', return_value={})
+    @patch.object(PluginManager, '__init__', return_value=None)
+    @patch.object(PluginManager, 'initialize', return_value={})
+    @patch.object(PluginManager, 'init_plugin', return_value={})
+    @patch.object(SecretManager, '__init__', return_value=None)
+    @patch.object(SecretManager, 'create_secret', return_value=None)
     def test_create_protocol(self, mock_plugin_verify, mock_list_secrets, mock_get_plugin, *args):
         secret_id = utils.generate_id('secret')
         plugin_id = utils.generate_id('plugin')
@@ -123,18 +119,9 @@ class TestProtocolService(unittest.TestCase):
         self.assertEqual(protocol_vo.plugin_info.version, plugin_version)
 
     @patch.object(MongoModel, 'connect', return_value=None)
-    @patch.object(RepositoryConnector, '__init__', return_value=None)
-    @patch.object(SecretConnector, '__init__', return_value=None)
-    @patch.object(SecretConnector, 'create_secret', return_value={'secret_id': 'secret-xyz', 'name': 'Secret'})
-    @patch.object(PluginConnector, '__init__', return_value=None)
-    @patch.object(PluginConnector, 'get_plugin_endpoint',
-                  return_value={'endpoint': 'grpc://plugin.spaceone.dev:50051', 'updated_version': '1.2'})
-    @patch.object(NotificationPluginConnector, 'initialize', return_value=None)
-    @patch.object(SecretConnector, 'get_secret_data', return_value={'data': {}})
-    @patch.object(RepositoryConnector, 'get_plugin_versions', return_value=['1.2', '1.1', '1.0'])
-    @patch.object(RepositoryConnector, 'get_plugin')
-    @patch.object(SecretConnector, 'list_secrets')
-    @patch.object(NotificationPluginConnector, 'init')
+    @patch.object(RepositoryManager, '__init__', return_value=None)
+    @patch.object(PluginManager, '__init__', return_value=None)
+    @patch.object(SecretManager, '__init__', return_value=None)
     def test_create_protocol_upgrade_manual_mode(self, mock_plugin_verify, mock_list_secrets, mock_get_plugin, *args):
         secret_id = utils.generate_id('secret')
         plugin_id = utils.generate_id('plugin')
@@ -226,16 +213,8 @@ class TestProtocolService(unittest.TestCase):
         self.assertEqual(params['tags'], update_protocol_vo.tags)
 
     @patch.object(MongoModel, 'connect', return_value=None)
-    @patch.object(RepositoryConnector, '__init__', return_value=None)
-    @patch.object(RepositoryConnector, 'get_plugin_versions', return_value=['1.2', '1.1', '1.1'])
-    @patch.object(RepositoryConnector, 'get_plugin')
-    @patch.object(SecretConnector, '__init__', return_value=None)
-    @patch.object(PluginConnector, '__init__', return_value=None)
-    @patch.object(PluginConnector, 'get_plugin_endpoint', return_value={'endpoint': 'grpc://plugin.spaceone.dev:50051', 'updated_version': '1.2'})
-    @patch.object(NotificationPluginConnector, 'initialize', return_value={'metadata': {'data_type': 'PLAIN_TEXT', 'data': {'schema': {'required': ['test']}}}})
-    @patch.object(SecretConnector, 'get_secret_data', return_value={'data': {}})
-    @patch.object(SecretConnector, 'list_secrets')
-    @patch.object(NotificationPluginConnector, 'init')
+    @patch.object(PluginManager, '__init__', return_value=None)
+    @patch.object(SecretManager, '__init__', return_value=None)
     def test_update_protocol_plugin(self, mock_plugin_init, mock_list_secrets, *args):
         updated_version = '1.2'
 
@@ -330,8 +309,8 @@ class TestProtocolService(unittest.TestCase):
         self.assertEqual('DISABLED', updated_protocol_vo.state)
 
     @patch.object(MongoModel, 'connect', return_value=None)
-    @patch.object(SecretConnector, '__init__', return_value=None)
-    @patch.object(SecretConnector, 'delete_secret', return_value=None)
+    @patch.object(SecretManager, '__init__', return_value=None)
+    @patch.object(SecretManager, 'delete_secret', return_value=None)
     def test_delete_protocol(self, *args):
         protocol_vo = ProtocolFactory(domain_id=self.domain_id)
         params = {
