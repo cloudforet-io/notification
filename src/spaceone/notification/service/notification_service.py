@@ -351,11 +351,12 @@ class NotificationService(BaseService):
                 protocol_mgr = self.locator.get_manager('ProtocolManager')
                 protocol_mgr.update_protocol_by_vo({'plugin_info': plugin_info}, protocol_vo)
 
-                self._dispatch_notification(protocol_vo, secret_data, channel_data, notification_type, message,
-                                            plugin_info.get('options', {}))
-
             except Exception as e:
                 _LOGGER.error(f'[Notification] Plugin Error: {e}')
+
+            self._dispatch_notification(protocol_vo, secret_data, channel_data, notification_type, message,
+                                        plugin_info.get('options', {}))
+
         else:
             _LOGGER.info('[Notification] Protocol is disabled. skip notification')
 
@@ -376,7 +377,8 @@ class NotificationService(BaseService):
 
         if quota_total_count:
             limit = quota_results[0].limit
-            self._check_quota_limit(protocol_vo.protocol_id, limit, usage_month, usage_date, count)
+            _limit = {'month': limit.month, 'day': limit.day}
+            self._check_quota_limit(protocol_vo.protocol_id, _limit, usage_month, usage_date, count)
         else:
             # Check Default Quota
             plugin_id = protocol_vo.plugin_info.plugin_id
@@ -392,21 +394,25 @@ class NotificationService(BaseService):
     def get_notification_usage(self, protocol_vo, month, date):
         usage_month = 0
         usage_date = 0
+        noti_usage_vo = None
+
         noti_usage_mgr: NotificationUsageManager = self.locator.get_manager('NotificationUsageManager')
 
-        query = {
+        month_query = {
             'filter': [
                 {'k': 'protocol_id', 'v': protocol_vo.protocol_id, 'o': 'eq'},
-                {'k': 'usage_month', 'v': month, 'o': 'eq'},
-                {'k': 'usage_date', 'v': date, 'o': 'eq'}
+                {'k': 'usage_month', 'v': month, 'o': 'eq'}
             ]
         }
-        noti_usage_results, noti_usage_total_count = noti_usage_mgr.list_notification_usages(query)
+        month_usage_results, month_usage_total_count = noti_usage_mgr.list_notification_usages(month_query)
 
-        if noti_usage_total_count > 0:
-            noti_usage_vo = noti_usage_results[0]
-            usage_month, usage_date = noti_usage_vo.usage_month, noti_usage_vo.usage_date
-        else:
+        for _noti_usage in month_usage_results:
+            usage_month += _noti_usage.count
+            if _noti_usage.usage_date == date:
+                usage_date = _noti_usage.count
+                noti_usage_vo = _noti_usage
+
+        if not noti_usage_vo:
             params = {
                 'protocol_id': protocol_vo.protocol_id,
                 'usage_month': month,
@@ -459,8 +465,8 @@ class NotificationService(BaseService):
     def _check_quota_limit(protocol_id, limit, usage_month, usage_date, count):
         if 'month' in limit:
             if limit['month'] != -1 and limit['month'] < (usage_month + count):
-                raise ERROR_QUOTA_IS_EXCEEDED(protocol_id=protocol_id, limit=limit['month'])
+                raise ERROR_QUOTA_IS_EXCEEDED(protocol_id=protocol_id, usage=usage_month+count, limit=limit['month'])
 
         if 'day' in limit:
             if limit['day'] != -1 and limit['day'] < (usage_date + count):
-                raise ERROR_QUOTA_IS_EXCEEDED(protocol_id=protocol_id, limit=limit['day'])
+                raise ERROR_QUOTA_IS_EXCEEDED(protocol_id=protocol_id, usage=usage_date+count, limit=limit['day'])
