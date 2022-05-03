@@ -82,3 +82,13 @@ INSTALLED_PROTOCOL_PLUGINS = [
     #     }
     # }
 ]
+
+DEFAULT_QUOTA = {
+    # ex: 'PROTOCOL_PLUGIN_ID': {'month': QUOTA, 'day': QUOTA},
+    # 'plugin-slack-noti-protocol': {'month': -1, 'day': -1},
+    # 'plugin-jira-noti-protocol': {'month': -1, 'day': -1},
+    # 'plugin-mzc-sms-noti-protocol': {'month': 3000, 'day': 100},
+    # 'plugin-mzc-voicecall-noti-protocol': {'month': 3000, 'day': 100},
+    # 'plugin-telegram-noti-protocol': {'month': -1, 'day': -1},
+    # 'plugin-email-noti-protocol': {'month': 30000, 'day': 1000},
+}

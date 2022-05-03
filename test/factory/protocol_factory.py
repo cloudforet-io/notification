@@ -9,7 +9,8 @@ class PluginInfoFactory(factory.mongoengine.MongoEngineFactory):
     class Meta:
         model = PluginInfo
 
-    plugin_id = factory.LazyAttribute(lambda o: utils.generate_id('plugin'))
+    # plugin_id = factory.LazyAttribute(lambda o: utils.generate_id('plugin'))
+    plugin_id = 'plugin-mzc-sms-noti-protocol'
     version = '1.0'
     options = {}
     metadata = {

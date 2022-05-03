@@ -13,6 +13,9 @@ from spaceone.notification.service.user_channel_service import UserChannelServic
 from spaceone.notification.model.user_channel_model import UserChannel
 from spaceone.notification.connector.secret_connector import SecretConnector
 from spaceone.notification.connector.identity_connector import IdentityConnector
+from spaceone.notification.manager.identity_manager import IdentityManager
+from spaceone.notification.manager.secret_manager import SecretManager
+
 from spaceone.notification.info.user_channel_info import *
 from spaceone.notification.info.common_info import StatisticsInfo
 from test.factory.protocol_factory import ProtocolFactory
@@ -45,9 +48,9 @@ class TestUserChannelService(unittest.TestCase):
         user_channel_vos = UserChannel.objects.filter()
         user_channel_vos.delete()
 
-    @patch.object(SecretConnector, '__init__', return_value=None)
-    @patch.object(IdentityConnector, '__init__', return_value=None)
-    @patch.object(IdentityConnector, 'get_user', return_value={'user_id': 'bluese05', 'name': 'JH Song'})
+    @patch.object(IdentityManager, '__init__', return_value=None)
+    @patch.object(IdentityManager, 'get_resource', return_value={})
+    @patch.object(SecretManager, '__init__', return_value=None)
     @patch.object(MongoModel, 'connect', return_value=None)
     def test_create_user_channel(self, *args):
         protocol_vo = ProtocolFactory(domain_id=self.domain_id)
@@ -90,9 +93,9 @@ class TestUserChannelService(unittest.TestCase):
         self.assertEqual(params['tags'], user_ch_vo.tags)
         self.assertEqual(params['domain_id'], user_ch_vo.domain_id)
 
-    @patch.object(SecretConnector, '__init__', return_value=None)
-    @patch.object(IdentityConnector, '__init__', return_value=None)
-    @patch.object(IdentityConnector, 'get_user', return_value={'user_id': 'bluese05', 'name': 'JH Song'})
+    @patch.object(IdentityManager, '__init__', return_value=None)
+    @patch.object(IdentityManager, 'get_resource', return_value={})
+    @patch.object(SecretManager, '__init__', return_value=None)
     @patch.object(MongoModel, 'connect', return_value=None)
     def test_create_user_channel_no_schedule(self, *args):
         protocol_vo = ProtocolFactory(domain_id=self.domain_id)
@@ -130,11 +133,9 @@ class TestUserChannelService(unittest.TestCase):
         self.assertEqual(params['tags'], user_ch_vo.tags)
         self.assertEqual(params['domain_id'], user_ch_vo.domain_id)
 
-    @patch.object(SecretConnector, '__init__', return_value=None)
-    @patch.object(IdentityConnector, '__init__', return_value=None)
-    @patch.object(IdentityConnector, 'get_user', return_value={'user_id': 'bluese05', 'name': 'JH Song'})
-    @patch.object(SecretConnector, 'create_secret', return_value={'secret_id': 'secret-xyz', 'name': 'Secret'})
-    @patch.object(SecretConnector, 'update_secret', return_value={'secret_id': 'secret-xyz', 'name': 'Update Secret'})
+    @patch.object(IdentityManager, '__init__', return_value=None)
+    @patch.object(IdentityManager, 'get_resource', return_value={})
+    @patch.object(SecretManager, '__init__', return_value=None)
     @patch.object(MongoModel, 'connect', return_value=None)
     def test_create_user_channel_secret(self, *args):
         protocol_vo = ProtocolFactory(domain_id=self.domain_id)
@@ -177,8 +178,8 @@ class TestUserChannelService(unittest.TestCase):
         self.assertEqual(params['tags'], user_ch_vo.tags)
         self.assertEqual(params['domain_id'], user_ch_vo.domain_id)
 
-    @patch.object(SecretConnector, '__init__', return_value=None)
-    @patch.object(IdentityConnector, '__init__', return_value=None)
+    @patch.object(IdentityManager, '__init__', return_value=None)
+    @patch.object(SecretManager, '__init__', return_value=None)
     @patch.object(MongoModel, 'connect', return_value=None)
     def test_update_user_channel(self, *args):
         user_channel_vo = UserChannelFactory(domain_id=self.domain_id)
@@ -211,9 +212,9 @@ class TestUserChannelService(unittest.TestCase):
         self.assertEqual(params['tags'], update_user_ch_vo.tags)
         self.assertEqual(params['domain_id'], update_user_ch_vo.domain_id)
 
-    @patch.object(SecretConnector, '__init__', return_value=None)
-    @patch.object(IdentityConnector, '__init__', return_value=None)
-    @patch.object(SecretConnector, 'update_secret_data')
+    @patch.object(IdentityManager, '__init__', return_value=None)
+    @patch.object(SecretManager, '__init__', return_value=None)
+    @patch.object(SecretManager, 'update_secret_data', return_value={})
     @patch.object(MongoModel, 'connect', return_value=None)
     def test_update_user_channel_secret(self, *args):
         user_channel_vo = UserChannelFactory(domain_id=self.domain_id, secret_id='secret-xyz')
@@ -247,8 +248,8 @@ class TestUserChannelService(unittest.TestCase):
         self.assertEqual(params['tags'], update_user_ch_vo.tags)
         self.assertEqual(params['domain_id'], update_user_ch_vo.domain_id)
 
-    @patch.object(SecretConnector, '__init__', return_value=None)
-    @patch.object(IdentityConnector, '__init__', return_value=None)
+    @patch.object(IdentityManager, '__init__', return_value=None)
+    @patch.object(SecretManager, '__init__', return_value=None)
     @patch.object(MongoModel, 'connect', return_value=None)
     def test_set_schedule(self, *args):
         user_channel_vo = UserChannelFactory(domain_id=self.domain_id, secret_id='secret-xyz',
@@ -280,8 +281,8 @@ class TestUserChannelService(unittest.TestCase):
         self.assertEqual(schedule['start_hour'], schedule_user_ch_vo.schedule.start_hour)
         self.assertEqual(schedule['end_hour'], schedule_user_ch_vo.schedule.end_hour)
 
-    @patch.object(SecretConnector, '__init__', return_value=None)
-    @patch.object(IdentityConnector, '__init__', return_value=None)
+    @patch.object(IdentityManager, '__init__', return_value=None)
+    @patch.object(SecretManager, '__init__', return_value=None)
     @patch.object(MongoModel, 'connect', return_value=None)
     def test_set_subscription(self, *args):
         user_channel_vo = UserChannelFactory(domain_id=self.domain_id, secret_id='secret-xyz',
@@ -306,8 +307,8 @@ class TestUserChannelService(unittest.TestCase):
         self.assertEqual(subscription_user_ch_vo.is_subscribe, True)
         self.assertEqual(subscriptions, subscription_user_ch_vo.subscriptions)
 
-    @patch.object(SecretConnector, '__init__', return_value=None)
-    @patch.object(IdentityConnector, '__init__', return_value=None)
+    @patch.object(IdentityManager, '__init__', return_value=None)
+    @patch.object(SecretManager, '__init__', return_value=None)
     @patch.object(MongoModel, 'connect', return_value=None)
     def test_enable_user_channel(self, *args):
         user_channel_vo = UserChannelFactory(domain_id=self.domain_id, state='DISABLED')
@@ -327,8 +328,8 @@ class TestUserChannelService(unittest.TestCase):
         self.assertEqual(updated_user_channel_vo.user_channel_id, user_channel_vo.user_channel_id)
         self.assertEqual('ENABLED', updated_user_channel_vo.state)
 
-    @patch.object(SecretConnector, '__init__', return_value=None)
-    @patch.object(IdentityConnector, '__init__', return_value=None)
+    @patch.object(IdentityManager, '__init__', return_value=None)
+    @patch.object(SecretManager, '__init__', return_value=None)
     @patch.object(MongoModel, 'connect', return_value=None)
     def test_disable_user_channel(self, *args):
         user_channel_vo = UserChannelFactory(domain_id=self.domain_id, state='ENABLED')
@@ -348,8 +349,8 @@ class TestUserChannelService(unittest.TestCase):
         self.assertEqual(updated_user_channel_vo.user_channel_id, user_channel_vo.user_channel_id)
         self.assertEqual('DISABLED', updated_user_channel_vo.state)
 
-    @patch.object(SecretConnector, '__init__', return_value=None)
-    @patch.object(IdentityConnector, '__init__', return_value=None)
+    @patch.object(IdentityManager, '__init__', return_value=None)
+    @patch.object(SecretManager, '__init__', return_value=None)
     @patch.object(MongoModel, 'connect', return_value=None)
     def test_delete_user_channel(self, *args):
         user_channel_vo = UserChannelFactory(domain_id=self.domain_id)
@@ -364,9 +365,9 @@ class TestUserChannelService(unittest.TestCase):
 
         self.assertIsNone(result)
 
-    @patch.object(SecretConnector, '__init__', return_value=None)
-    @patch.object(IdentityConnector, '__init__', return_value=None)
-    @patch.object(SecretConnector, 'delete_secret')
+    @patch.object(IdentityManager, '__init__', return_value=None)
+    @patch.object(SecretManager, '__init__', return_value=None)
+    @patch.object(SecretManager, 'delete_secret', return_value=None)
     @patch.object(MongoModel, 'connect', return_value=None)
     def test_delete_user_channel_secret(self, *args):
         user_channel_vo = UserChannelFactory(domain_id=self.domain_id, secret_id='secret-abcde')
@@ -381,8 +382,8 @@ class TestUserChannelService(unittest.TestCase):
 
         self.assertIsNone(result)
 
-    @patch.object(SecretConnector, '__init__', return_value=None)
-    @patch.object(IdentityConnector, '__init__', return_value=None)
+    @patch.object(IdentityManager, '__init__', return_value=None)
+    @patch.object(SecretManager, '__init__', return_value=None)
     @patch.object(MongoModel, 'connect', return_value=None)
     def test_get_user_channel(self, *args):
         user_channel_vo = UserChannelFactory(domain_id=self.domain_id)
@@ -400,8 +401,8 @@ class TestUserChannelService(unittest.TestCase):
 
         self.assertIsInstance(get_user_channel_vo, UserChannel)
 
-    @patch.object(SecretConnector, '__init__', return_value=None)
-    @patch.object(IdentityConnector, '__init__', return_value=None)
+    @patch.object(IdentityManager, '__init__', return_value=None)
+    @patch.object(SecretManager, '__init__', return_value=None)
     @patch.object(MongoModel, 'connect', return_value=None)
     def test_list_user_channels_by_user_channel_id(self, *args):
         user_channel_vos = UserChannelFactory.build_batch(10, domain_id=self.domain_id)
@@ -421,8 +422,8 @@ class TestUserChannelService(unittest.TestCase):
         self.assertIsInstance(user_channel_svc[0], UserChannel)
         self.assertEqual(total_count, 1)
 
-    @patch.object(SecretConnector, '__init__', return_value=None)
-    @patch.object(IdentityConnector, '__init__', return_value=None)
+    @patch.object(IdentityManager, '__init__', return_value=None)
+    @patch.object(SecretManager, '__init__', return_value=None)
     @patch.object(MongoModel, 'connect', return_value=None)
     def test_list_user_channels_by_name(self, *args):
         user_channel_vos = UserChannelFactory.build_batch(10, domain_id=self.domain_id)
@@ -442,8 +443,8 @@ class TestUserChannelService(unittest.TestCase):
         self.assertIsInstance(user_channel_vos[0], UserChannel)
         self.assertEqual(total_count, 1)
 
-    @patch.object(SecretConnector, '__init__', return_value=None)
-    @patch.object(IdentityConnector, '__init__', return_value=None)
+    @patch.object(IdentityManager, '__init__', return_value=None)
+    @patch.object(SecretManager, '__init__', return_value=None)
     @patch.object(MongoModel, 'connect', return_value=None)
     def test_stat_user_channel(self, *args):
         user_channel_vos = UserChannelFactory.build_batch(10, domain_id=self.domain_id)
@@ -479,8 +480,8 @@ class TestUserChannelService(unittest.TestCase):
 
         print_data(values, 'test_stat_user_channel')
 
-    @patch.object(SecretConnector, '__init__', return_value=None)
-    @patch.object(IdentityConnector, '__init__', return_value=None)
+    @patch.object(IdentityManager, '__init__', return_value=None)
+    @patch.object(SecretManager, '__init__', return_value=None)
     @patch.object(MongoModel, 'connect', return_value=None)
     def test_stat_user_channel_distinct(self, *args):
         user_channel_vos = UserChannelFactory.build_batch(10, domain_id=self.domain_id)

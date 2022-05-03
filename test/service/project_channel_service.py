@@ -11,8 +11,8 @@ from spaceone.core.transaction import Transaction
 
 from spaceone.notification.service.project_channel_service import ProjectChannelService
 from spaceone.notification.model.project_channel_model import ProjectChannel
-from spaceone.notification.connector.secret_connector import SecretConnector
-from spaceone.notification.connector.identity_connector import IdentityConnector
+from spaceone.notification.manager.identity_manager import IdentityManager
+from spaceone.notification.manager.secret_manager import SecretManager
 from spaceone.notification.info.project_channel_info import *
 from spaceone.notification.info.common_info import StatisticsInfo
 from test.factory.protocol_factory import ProtocolFactory
@@ -45,9 +45,10 @@ class TestProjectChannelService(unittest.TestCase):
         project_channel_vos = ProjectChannel.objects.filter()
         project_channel_vos.delete()
 
-    @patch.object(SecretConnector, '__init__', return_value=None)
-    @patch.object(IdentityConnector, '__init__', return_value=None)
-    @patch.object(IdentityConnector, 'get_project', return_value={'project_id': 'project-xyz', 'name': 'Project X'})
+    @patch.object(IdentityManager, '__init__', return_value=None)
+    @patch.object(SecretManager, '__init__', return_value=None)
+    @patch.object(IdentityManager, 'get_resource', return_value={})
+    @patch.object(SecretManager, 'create_secret', return_value={})
     @patch.object(MongoModel, 'connect', return_value=None)
     def test_create_project_channel(self, *args):
         protocol_vo = ProtocolFactory(domain_id=self.domain_id)
@@ -89,11 +90,10 @@ class TestProjectChannelService(unittest.TestCase):
         self.assertEqual(params['tags'], project_ch_vo.tags)
         self.assertEqual(params['domain_id'], project_ch_vo.domain_id)
 
-    @patch.object(SecretConnector, '__init__', return_value=None)
-    @patch.object(IdentityConnector, '__init__', return_value=None)
-    @patch.object(IdentityConnector, 'get_project', return_value={'project_id': 'project-xyz', 'name': 'Project X'})
-    @patch.object(SecretConnector, 'create_secret', return_value={'secret_id': 'secret-xyz', 'name': 'Secret'})
-    @patch.object(SecretConnector, 'update_secret', return_value={'secret_id': 'secret-xyz', 'name': 'Update Secret'})
+    @patch.object(IdentityManager, '__init__', return_value=None)
+    @patch.object(SecretManager, '__init__', return_value=None)
+    @patch.object(IdentityManager, 'get_resource', return_value={})
+    @patch.object(SecretManager, 'create_secret', return_value={})
     @patch.object(MongoModel, 'connect', return_value=None)
     def test_create_project_channel_2(self, *args):
         protocol_vo = ProtocolFactory(domain_id=self.domain_id)
@@ -135,8 +135,9 @@ class TestProjectChannelService(unittest.TestCase):
         self.assertEqual(params['tags'], project_ch_vo.tags)
         self.assertEqual(params['domain_id'], project_ch_vo.domain_id)
 
-    @patch.object(SecretConnector, '__init__', return_value=None)
-    @patch.object(IdentityConnector, '__init__', return_value=None)
+    @patch.object(IdentityManager, '__init__', return_value=None)
+    @patch.object(SecretManager, '__init__', return_value=None)
+    @patch.object(SecretManager, 'update_secret', return_value={})
     @patch.object(MongoModel, 'connect', return_value=None)
     def test_update_project_channel(self, *args):
         protocol_vo = ProtocolFactory(domain_id=self.domain_id)
@@ -170,9 +171,9 @@ class TestProjectChannelService(unittest.TestCase):
         self.assertEqual(params['tags'], update_project_ch_vo.tags)
         self.assertEqual(params['domain_id'], update_project_ch_vo.domain_id)
 
-    @patch.object(SecretConnector, '__init__', return_value=None)
-    @patch.object(IdentityConnector, '__init__', return_value=None)
-    @patch.object(SecretConnector, 'update_secret_data')
+    @patch.object(IdentityManager, '__init__', return_value=None)
+    @patch.object(SecretManager, '__init__', return_value=None)
+    @patch.object(SecretManager, 'update_secret_data', return_value={})
     @patch.object(MongoModel, 'connect', return_value=None)
     def test_update_project_channel_secret(self, *args):
         protocol_vo = ProtocolFactory(domain_id=self.domain_id)
@@ -208,8 +209,8 @@ class TestProjectChannelService(unittest.TestCase):
         self.assertEqual(params['tags'], update_project_ch_vo.tags)
         self.assertEqual(params['domain_id'], update_project_ch_vo.domain_id)
 
-    @patch.object(SecretConnector, '__init__', return_value=None)
-    @patch.object(IdentityConnector, '__init__', return_value=None)
+    @patch.object(IdentityManager, '__init__', return_value=None)
+    @patch.object(SecretManager, '__init__', return_value=None)
     @patch.object(MongoModel, 'connect', return_value=None)
     def test_set_schedule(self, *args):
         project_channel_vo = ProjectChannelFactory(domain_id=self.domain_id, secret_id='secret-xyz',
@@ -241,8 +242,8 @@ class TestProjectChannelService(unittest.TestCase):
         self.assertEqual(schedule['start_hour'], schedule_project_ch_vo.schedule.start_hour)
         self.assertEqual(schedule['end_hour'], schedule_project_ch_vo.schedule.end_hour)
 
-    @patch.object(SecretConnector, '__init__', return_value=None)
-    @patch.object(IdentityConnector, '__init__', return_value=None)
+    @patch.object(IdentityManager, '__init__', return_value=None)
+    @patch.object(SecretManager, '__init__', return_value=None)
     @patch.object(MongoModel, 'connect', return_value=None)
     def test_set_subscription(self, *args):
         project_channel_vo = ProjectChannelFactory(domain_id=self.domain_id, secret_id='secret-xyz',
@@ -267,8 +268,8 @@ class TestProjectChannelService(unittest.TestCase):
         self.assertEqual(subscription_project_ch_vo.is_subscribe, True)
         self.assertEqual(subscriptions, subscription_project_ch_vo.subscriptions)
 
-    @patch.object(SecretConnector, '__init__', return_value=None)
-    @patch.object(IdentityConnector, '__init__', return_value=None)
+    @patch.object(IdentityManager, '__init__', return_value=None)
+    @patch.object(SecretManager, '__init__', return_value=None)
     @patch.object(MongoModel, 'connect', return_value=None)
     def test_enable_project_channel(self, *args):
         project_channel_vo = ProjectChannelFactory(domain_id=self.domain_id, state='DISABLED')
@@ -288,8 +289,8 @@ class TestProjectChannelService(unittest.TestCase):
         self.assertEqual(updated_project_channel_vo.project_channel_id, project_channel_vo.project_channel_id)
         self.assertEqual('ENABLED', updated_project_channel_vo.state)
 
-    @patch.object(SecretConnector, '__init__', return_value=None)
-    @patch.object(IdentityConnector, '__init__', return_value=None)
+    @patch.object(IdentityManager, '__init__', return_value=None)
+    @patch.object(SecretManager, '__init__', return_value=None)
     @patch.object(MongoModel, 'connect', return_value=None)
     def test_disable_project_channel(self, *args):
         project_channel_vo = ProjectChannelFactory(domain_id=self.domain_id, state='ENABLED')
@@ -309,8 +310,8 @@ class TestProjectChannelService(unittest.TestCase):
         self.assertEqual(updated_project_channel_vo.project_channel_id, project_channel_vo.project_channel_id)
         self.assertEqual('DISABLED', updated_project_channel_vo.state)
 
-    @patch.object(SecretConnector, '__init__', return_value=None)
-    @patch.object(IdentityConnector, '__init__', return_value=None)
+    @patch.object(IdentityManager, '__init__', return_value=None)
+    @patch.object(SecretManager, '__init__', return_value=None)
     @patch.object(MongoModel, 'connect', return_value=None)
     def test_delete_project_channel(self, *args):
         project_channel_vo = ProjectChannelFactory(domain_id=self.domain_id)
@@ -325,9 +326,9 @@ class TestProjectChannelService(unittest.TestCase):
 
         self.assertIsNone(result)
 
-    @patch.object(SecretConnector, '__init__', return_value=None)
-    @patch.object(IdentityConnector, '__init__', return_value=None)
-    @patch.object(SecretConnector, 'delete_secret')
+    @patch.object(IdentityManager, '__init__', return_value=None)
+    @patch.object(SecretManager, '__init__', return_value=None)
+    @patch.object(SecretManager, 'delete_secret', return_value=None)
     @patch.object(MongoModel, 'connect', return_value=None)
     def test_delete_user_channel_secret(self, *args):
         project_channel_vo = ProjectChannelFactory(domain_id=self.domain_id, secret_id='secret-abcde')
@@ -342,8 +343,8 @@ class TestProjectChannelService(unittest.TestCase):
 
         self.assertIsNone(result)
 
-    @patch.object(SecretConnector, '__init__', return_value=None)
-    @patch.object(IdentityConnector, '__init__', return_value=None)
+    @patch.object(IdentityManager, '__init__', return_value=None)
+    @patch.object(SecretManager, '__init__', return_value=None)
     @patch.object(MongoModel, 'connect', return_value=None)
     def test_get_project_channel(self, *args):
         project_channel_vo = ProjectChannelFactory(domain_id=self.domain_id)
@@ -361,8 +362,8 @@ class TestProjectChannelService(unittest.TestCase):
 
         self.assertIsInstance(get_project_channel_vo, ProjectChannel)
 
-    @patch.object(SecretConnector, '__init__', return_value=None)
-    @patch.object(IdentityConnector, '__init__', return_value=None)
+    @patch.object(IdentityManager, '__init__', return_value=None)
+    @patch.object(SecretManager, '__init__', return_value=None)
     @patch.object(MongoModel, 'connect', return_value=None)
     def test_list_project_channels_by_project_channel_id(self, *args):
         project_channel_vos = ProjectChannelFactory.build_batch(10, domain_id=self.domain_id)
@@ -382,8 +383,8 @@ class TestProjectChannelService(unittest.TestCase):
         self.assertIsInstance(project_channel_vos[0], ProjectChannel)
         self.assertEqual(total_count, 1)
 
-    @patch.object(SecretConnector, '__init__', return_value=None)
-    @patch.object(IdentityConnector, '__init__', return_value=None)
+    @patch.object(IdentityManager, '__init__', return_value=None)
+    @patch.object(SecretManager, '__init__', return_value=None)
     @patch.object(MongoModel, 'connect', return_value=None)
     def test_list_project_channels_by_name(self, *args):
         project_channel_vos = ProjectChannelFactory.build_batch(10, domain_id=self.domain_id)
@@ -403,8 +404,8 @@ class TestProjectChannelService(unittest.TestCase):
         self.assertIsInstance(project_channel_vos[0], ProjectChannel)
         self.assertEqual(total_count, 1)
 
-    @patch.object(SecretConnector, '__init__', return_value=None)
-    @patch.object(IdentityConnector, '__init__', return_value=None)
+    @patch.object(IdentityManager, '__init__', return_value=None)
+    @patch.object(SecretManager, '__init__', return_value=None)
     @patch.object(MongoModel, 'connect', return_value=None)
     def test_stat_project_channel(self, *args):
         project_channel_vos = ProjectChannelFactory.build_batch(10, domain_id=self.domain_id)
@@ -440,8 +441,8 @@ class TestProjectChannelService(unittest.TestCase):
 
         print_data(values, 'test_stat_project_channel')
 
-    @patch.object(SecretConnector, '__init__', return_value=None)
-    @patch.object(IdentityConnector, '__init__', return_value=None)
+    @patch.object(IdentityManager, '__init__', return_value=None)
+    @patch.object(SecretManager, '__init__', return_value=None)
     @patch.object(MongoModel, 'connect', return_value=None)
     def test_stat_project_channel_distinct(self, *args):
         project_channel_vos = ProjectChannelFactory.build_batch(10, domain_id=self.domain_id)

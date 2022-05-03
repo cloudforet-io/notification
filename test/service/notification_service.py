@@ -8,17 +8,11 @@ from spaceone.core import config
 from spaceone.core import utils
 from spaceone.core.model.mongo_model import MongoModel
 from spaceone.core.transaction import Transaction
-from spaceone.notification.error import *
 from spaceone.notification.service.notification_service import NotificationService
+from spaceone.notification.manager.secret_manager import SecretManager
 from spaceone.notification.model.notification_model import Notification
-from spaceone.notification.connector.notification_plugin_connector import NotificationPluginConnector
-from spaceone.notification.connector.plugin_connector import PluginConnector
-from spaceone.notification.connector.repository_connector import RepositoryConnector
-from spaceone.notification.connector.secret_connector import SecretConnector
-from spaceone.notification.connector.identity_connector import IdentityConnector
-from spaceone.core.connector.space_connector import SpaceConnector
-
 from spaceone.notification.manager.plugin_manager import PluginManager
+from spaceone.notification.manager.identity_manager import IdentityManager
 
 from spaceone.notification.info.notification_info import *
 from spaceone.notification.info.common_info import StatisticsInfo
@@ -26,6 +20,8 @@ from test.factory.notification_factory import NotificationFactory
 from test.factory.protocol_factory import ProtocolFactory
 from test.factory.project_channel_factory import ProjectChannelFactory
 from test.factory.user_channel_factory import UserChannelFactory
+from test.factory.quota_factory import QuotaFactory
+from test.factory.notification_usage_factory import NotificationUsageFactory
 
 
 class TestProtocolService(unittest.TestCase):
@@ -56,11 +52,7 @@ class TestProtocolService(unittest.TestCase):
         notification_vos = Notification.objects.filter()
         notification_vos.delete()
 
-    @patch.object(MongoModel, 'connect', return_value=None)
-    @patch.object(SecretConnector, '__init__', return_value=None)
-    @patch.object(PluginConnector, '__init__', return_value=None)
-    @patch.object(IdentityConnector, '__init__', return_value=None)
-    @patch.object(IdentityConnector, 'get_project', return_value={'project_id': 'xxxx'})
+    @patch.object(IdentityManager, 'get_resource', return_value={})
     def test_create_notification_without_channel(self, *args):
         project_id = utils.generate_id('project')
 
@@ -80,14 +72,9 @@ class TestProtocolService(unittest.TestCase):
         notification_svc = NotificationService(transaction=self.transaction)
         notification_svc.create(params.copy())
 
-    @patch.object(MongoModel, 'connect', return_value=None)
-    @patch.object(SecretConnector, '__init__', return_value=None)
-    @patch.object(PluginConnector, '__init__', return_value=None)
-    @patch.object(IdentityConnector, '__init__', return_value=None)
-    @patch.object(NotificationPluginConnector, 'dispatch_notification', return_value=None)
-    @patch.object(IdentityConnector, 'get_project', return_value={'project_id': 'xxxx'})
-    @patch.object(SecretConnector, 'list_secrets', return_value={'total_count': 1})
-    @patch.object(SecretConnector, 'get_secret_data', return_value={'data': {'xxxx': 'yyyy'}})
+    @patch.object(IdentityManager, 'get_resource', return_value={})
+    @patch.object(SecretManager, 'get_secret_data', return_value={'data': {'xxxx': 'yyyy'}})
+    @patch.object(PluginManager, 'dispatch_notification', return_value=None)
     def test_create_notification_with_project_channel(self, *args):
         protocol_vo = ProtocolFactory(domain_id=self.domain_id)
         project_channel_vo = ProjectChannelFactory(domain_id=self.domain_id, protocol_id=protocol_vo.protocol_id)
@@ -108,14 +95,9 @@ class TestProtocolService(unittest.TestCase):
         notification_svc = NotificationService(transaction=self.transaction)
         notification_svc.create(params.copy())
 
-    @patch.object(MongoModel, 'connect', return_value=None)
-    @patch.object(SecretConnector, '__init__', return_value=None)
-    @patch.object(PluginConnector, '__init__', return_value=None)
-    @patch.object(IdentityConnector, '__init__', return_value=None)
-    @patch.object(NotificationPluginConnector, 'dispatch_notification', return_value=None)
-    @patch.object(IdentityConnector, 'get_user', return_value={'user_id': 'bluese05'})
-    @patch.object(SecretConnector, 'list_secrets', return_value={'total_count': 1})
-    @patch.object(SecretConnector, 'get_secret_data', return_value={'data': {'xxxx': 'yyyy'}})
+    @patch.object(IdentityManager, 'get_resource', return_value={})
+    @patch.object(SecretManager, 'get_secret_data', return_value={'data': {'xxxx': 'yyyy'}})
+    @patch.object(PluginManager, 'dispatch_notification', return_value=None)
     def test_create_notification_with_user_channel(self, *args):
         protocol_vo = ProtocolFactory(domain_id=self.domain_id)
         user_channel_vo = UserChannelFactory(domain_id=self.domain_id, protocol_id=protocol_vo.protocol_id)
@@ -136,16 +118,13 @@ class TestProtocolService(unittest.TestCase):
         notification_svc = NotificationService(transaction=self.transaction)
         notification_svc.create(params.copy())
 
-    @patch.object(MongoModel, 'connect', return_value=None)
-    @patch.object(SecretConnector, '__init__', return_value=None)
-    @patch.object(PluginConnector, '__init__', return_value=None)
-    @patch.object(IdentityConnector, '__init__', return_value=None)
-    @patch.object(NotificationPluginConnector, 'dispatch_notification', return_value=None)
-    @patch.object(IdentityConnector, 'get_user', return_value={'user_id': 'bluese05'})
-    @patch.object(SecretConnector, 'list_secrets', return_value={'total_count': 1})
-    @patch.object(SecretConnector, 'get_secret_data', return_value={'data': {'xxxx': 'yyyy'}})
+    @patch.object(SecretManager, 'get_secret_data', return_value={'data': {'xxxx': 'yyyy'}})
+    @patch.object(PluginManager, 'dispatch_notification', return_value=None)
     def test_push_notification(self, *args):
         protocol_vo = ProtocolFactory(domain_id=self.domain_id)
+        QuotaFactory(protocol=protocol_vo, protocol_id=protocol_vo.protocol_id, domain_id=self.domain_id)
+        NotificationUsageFactory(protocol_id=protocol_vo.protocol_id, domain_id=self.domain_id, usage_date='01')
+        noti_usage_vo = NotificationUsageFactory(protocol_id=protocol_vo.protocol_id, domain_id=self.domain_id)
 
         params = {
             'protocol_id': protocol_vo.protocol_id,

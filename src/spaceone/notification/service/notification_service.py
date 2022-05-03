@@ -11,7 +11,9 @@ from spaceone.notification.manager import UserChannelManager
 from spaceone.notification.manager import ProtocolManager
 from spaceone.notification.manager import SecretManager
 from spaceone.notification.manager import PluginManager
-
+from spaceone.notification.manager import QuotaManager
+from spaceone.notification.manager import NotificationUsageManager
+from spaceone.notification.conf.global_conf import *
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -225,7 +227,6 @@ class NotificationService(BaseService):
     @transaction(append_meta={'authorization.scope': 'USER'})
     @check_required(['notification_id', 'domain_id'])
     def get(self, params):
-
         """ Get Notification
 
         Args:
@@ -342,7 +343,6 @@ class NotificationService(BaseService):
             try:
                 endpoint_info = plugin_mgr.initialize(plugin_info, domain_id)
                 plugin_metadata = plugin_mgr.init_plugin(options)
-
                 plugin_info['metadata'] = plugin_metadata
 
                 if version := endpoint_info.get('updated_version'):
@@ -351,12 +351,77 @@ class NotificationService(BaseService):
                 protocol_mgr = self.locator.get_manager('ProtocolManager')
                 protocol_mgr.update_protocol_by_vo({'plugin_info': plugin_info}, protocol_vo)
 
-                plugin_mgr.dispatch_notification(secret_data, channel_data, notification_type,
-                                                 message, plugin_info.get('options', {}))
             except Exception as e:
                 _LOGGER.error(f'[Notification] Plugin Error: {e}')
+
+            self._dispatch_notification(protocol_vo, secret_data, channel_data, notification_type, message,
+                                        plugin_info.get('options', {}))
+
         else:
             _LOGGER.info('[Notification] Protocol is disabled. skip notification')
+
+    def _dispatch_notification(self, protocol_vo, secret_data, channel_data, notification_type, message, options):
+        plugin_mgr: PluginManager = self.locator.get_manager('PluginManager')
+
+        month, date = self.get_month_date()
+        noti_usage_vo, usage_month, usage_date = self.get_notification_usage(protocol_vo, month, date)
+        self.check_quota(protocol_vo, usage_month, usage_date)
+        plugin_mgr.dispatch_notification(secret_data, channel_data, notification_type, message, options)
+        self.increment_quota(noti_usage_vo)
+
+    def check_quota(self, protocol_vo, usage_month, usage_date, count=1):
+        quota_mgr: QuotaManager = self.locator.get_manager('QuotaManager')
+
+        query = {'filter': [{'k': 'protocol', 'v': protocol_vo, 'o': 'eq'}]}
+        quota_results, quota_total_count = quota_mgr.list_quotas(query)
+
+        if quota_total_count:
+            limit = quota_results[0].limit
+            _limit = {'month': limit.month, 'day': limit.day}
+            self._check_quota_limit(protocol_vo.protocol_id, _limit, usage_month, usage_date, count)
+        else:
+            # Check Default Quota
+            plugin_id = protocol_vo.plugin_info.plugin_id
+
+            if plugin_id in DEFAULT_QUOTA:
+                limit = DEFAULT_QUOTA[plugin_id]
+                self._check_quota_limit(protocol_vo.protocol_id, limit, usage_month, usage_date, count)
+
+    def increment_quota(self, noti_usage_vo, count=1):
+        noti_usage_mgr: NotificationUsageManager = self.locator.get_manager('NotificationUsageManager')
+        noti_usage_mgr.incremental_notification_usage(noti_usage_vo, count)
+
+    def get_notification_usage(self, protocol_vo, month, date):
+        usage_month = 0
+        usage_date = 0
+        noti_usage_vo = None
+
+        noti_usage_mgr: NotificationUsageManager = self.locator.get_manager('NotificationUsageManager')
+
+        month_query = {
+            'filter': [
+                {'k': 'protocol_id', 'v': protocol_vo.protocol_id, 'o': 'eq'},
+                {'k': 'usage_month', 'v': month, 'o': 'eq'}
+            ]
+        }
+        month_usage_results, month_usage_total_count = noti_usage_mgr.list_notification_usages(month_query)
+
+        for _noti_usage in month_usage_results:
+            usage_month += _noti_usage.count
+            if _noti_usage.usage_date == date:
+                usage_date = _noti_usage.count
+                noti_usage_vo = _noti_usage
+
+        if not noti_usage_vo:
+            params = {
+                'protocol_id': protocol_vo.protocol_id,
+                'usage_month': month,
+                'usage_date': date,
+                'domain_id': protocol_vo.domain_id
+            }
+            noti_usage_vo = noti_usage_mgr.create_notification_usage(params)
+
+        return noti_usage_vo, usage_month, usage_date
 
     @staticmethod
     def check_schedule_for_dispatch(is_scheduled, schedule):
@@ -390,3 +455,18 @@ class NotificationService(BaseService):
             return True
 
         return False
+
+    @staticmethod
+    def get_month_date():
+        now = datetime.datetime.now()
+        return now.strftime('%Y-%m'), now.strftime('%d')
+
+    @staticmethod
+    def _check_quota_limit(protocol_id, limit, usage_month, usage_date, count):
+        if 'month' in limit:
+            if limit['month'] != -1 and limit['month'] < (usage_month + count):
+                raise ERROR_QUOTA_IS_EXCEEDED(protocol_id=protocol_id, usage=usage_month+count, limit=limit['month'])
+
+        if 'day' in limit:
+            if limit['day'] != -1 and limit['day'] < (usage_date + count):
+                raise ERROR_QUOTA_IS_EXCEEDED(protocol_id=protocol_id, usage=usage_date+count, limit=limit['day'])
