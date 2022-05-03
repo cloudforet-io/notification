@@ -4,8 +4,8 @@ from spaceone.notification.model.protocol_model import Protocol
 
 
 class QuotaLimit(EmbeddedDocument):
-    day = IntField(default=0)
-    month = IntField(default=0)
+    day = IntField(default=-1)
+    month = IntField(default=-1)
 
 
 class Quota(MongoModel):
