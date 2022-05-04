@@ -366,7 +366,7 @@ class NotificationService(BaseService):
         noti_usage_vo, usage_month, usage_date = self.get_notification_usage(protocol_vo, month, date)
         self.check_quota(protocol_vo, usage_month, usage_date)
         plugin_mgr.dispatch_notification(secret_data, channel_data, notification_type, message, options)
-        self.increment_quota(noti_usage_vo)
+        self.increment_usage(noti_usage_vo)
 
     def check_quota(self, protocol_vo, usage_month, usage_date, count=1):
         quota_mgr: QuotaManager = self.locator.get_manager('QuotaManager')
@@ -385,8 +385,9 @@ class NotificationService(BaseService):
                 limit = DEFAULT_QUOTA[plugin_id]
                 self._check_quota_limit(protocol_vo.protocol_id, limit, usage_month, usage_date, count)
 
-    def increment_quota(self, noti_usage_vo, count=1):
+    def increment_usage(self, noti_usage_vo, count=1):
         noti_usage_mgr: NotificationUsageManager = self.locator.get_manager('NotificationUsageManager')
+        _LOGGER.debug(f"[increment_quota] Incremental Usage Count - Protocol {noti_usage_vo.protocol_id} (count: {count}")
         noti_usage_mgr.incremental_notification_usage(noti_usage_vo, count)
 
     def get_notification_usage(self, protocol_vo, month, date):
