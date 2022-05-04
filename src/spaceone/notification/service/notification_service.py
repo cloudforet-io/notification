@@ -465,8 +465,10 @@ class NotificationService(BaseService):
     def _check_quota_limit(protocol_id, limit, usage_month, usage_date, count):
         if 'month' in limit:
             if limit['month'] != -1 and limit['month'] < (usage_month + count):
-                raise ERROR_QUOTA_IS_EXCEEDED(protocol_id=protocol_id, usage=usage_month, limit=limit['month'])
+                raise ERROR_QUOTA_IS_EXCEEDED(protocol_id=protocol_id,
+                                              limit=f'limit.month=({usage_month}/{limit["month"]})')
 
         if 'day' in limit:
             if limit['day'] != -1 and limit['day'] < (usage_date + count):
-                raise ERROR_QUOTA_IS_EXCEEDED(protocol_id=protocol_id, usage=usage_date, limit=limit['day'])
+                raise ERROR_QUOTA_IS_EXCEEDED(protocol_id=protocol_id,
+                                              limit=f'limit.day=({usage_date}/{limit["day"]})')
