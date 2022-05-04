@@ -136,14 +136,14 @@ class QuotaService(BaseService):
     @staticmethod
     def limit_validation_check(limit):
         if 'day' in limit:
-            if isinstance(limit['day'], 1):
+            if isinstance(limit['day'], int):
                 if limit['day'] < -1:
                     raise ERROR_QUOTA_LIMIT_TYPE(limit=limit['day'])
             else:
                 raise ERROR_QUOTA_LIMIT_TYPE(limit=limit['day'])
 
         if 'month' in limit:
-            if isinstance(limit['month'], 1):
+            if isinstance(limit['month'], int):
                 if limit['month'] < -1:
                     raise ERROR_QUOTA_LIMIT_TYPE(limit=limit['month'])
             else:
