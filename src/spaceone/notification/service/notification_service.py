@@ -351,16 +351,17 @@ class NotificationService(BaseService):
                 protocol_mgr = self.locator.get_manager('ProtocolManager')
                 protocol_mgr.update_protocol_by_vo({'plugin_info': plugin_info}, protocol_vo)
 
-                self._dispatch_notification(protocol_vo, secret_data, channel_data, notification_type, message,
-                                            plugin_info.get('options', {}))
             except Exception as e:
                 _LOGGER.error(f'[Notification] Plugin Error: {e}')
+
+            self._dispatch_notification(protocol_vo, secret_data, channel_data, notification_type, message,
+                                        plugin_info.get('options', {}), plugin_mgr)
 
         else:
             _LOGGER.info('[Notification] Protocol is disabled. skip notification')
 
-    def _dispatch_notification(self, protocol_vo, secret_data, channel_data, notification_type, message, options):
-        plugin_mgr: PluginManager = self.locator.get_manager('PluginManager')
+    def _dispatch_notification(self, protocol_vo, secret_data, channel_data, notification_type, message, options,
+                               plugin_mgr):
 
         month, date = self.get_month_date()
         noti_usage_vo, usage_month, usage_date = self.get_notification_usage(protocol_vo, month, date)
