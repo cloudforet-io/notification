@@ -388,7 +388,7 @@ class NotificationService(BaseService):
 
     def increment_usage(self, noti_usage_vo, count=1):
         noti_usage_mgr: NotificationUsageManager = self.locator.get_manager('NotificationUsageManager')
-        _LOGGER.debug(f"[increment_quota] Incremental Usage Count - Protocol {noti_usage_vo.protocol_id} (count: {count})")
+        _LOGGER.debug(f"[increment_usage] Incremental Usage Count - Protocol {noti_usage_vo.protocol_id} (count: {count})")
         noti_usage_mgr.incremental_notification_usage(noti_usage_vo, count)
 
     def get_notification_usage(self, protocol_vo, month, date):
