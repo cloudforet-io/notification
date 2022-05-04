@@ -37,8 +37,11 @@ class QuotaService(BaseService):
             quota_vo (object)
         """
         protocol_mgr: ProtocolManager = self.locator.get_manager('ProtocolManager')
-        params['protocol'] = protocol_mgr.get_protocol(params['protocol_id'], params['domain_id'])
-        self.limit_validation_check(params['limit'])
+        params.update({
+            'protocol': protocol_mgr.get_protocol(params['protocol_id'], params['domain_id']),
+            'limit': self.limit_validation_check(params['limit'])
+        })
+
         return self.quota_mgr.create_quota(params)
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
@@ -57,7 +60,8 @@ class QuotaService(BaseService):
             quota_vo (object)
         """
         quota_vo = self.quota_mgr.get_quota(params['quota_id'], params['domain_id'])
-        self.limit_validation_check(params['limit'])
+
+        params['limit'] = self.limit_validation_check(params['limit'])
         return self.quota_mgr.update_quota_by_vo(params, quota_vo)
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
@@ -135,16 +139,24 @@ class QuotaService(BaseService):
 
     @staticmethod
     def limit_validation_check(limit):
+        valid_limit = {}
+
         if 'day' in limit:
-            if isinstance(int(limit['day']), int):
+            if isinstance(limit['day'], int) or isinstance(limit['day'], float):
                 if limit['day'] < -1:
                     raise ERROR_QUOTA_LIMIT_TYPE(limit=limit['day'])
             else:
                 raise ERROR_QUOTA_LIMIT_TYPE(limit=limit['day'])
 
+            valid_limit['day'] = int(limit['day'])
+
         if 'month' in limit:
-            if isinstance(int(limit['month']), int):
+            if isinstance(int(limit['month']), int) or isinstance(int(limit['month']), float):
                 if limit['month'] < -1:
                     raise ERROR_QUOTA_LIMIT_TYPE(limit=limit['month'])
             else:
                 raise ERROR_QUOTA_LIMIT_TYPE(limit=limit['month'])
+
+            valid_limit['month'] = int(limit['month'])
+
+        return valid_limit

@@ -388,7 +388,7 @@ class NotificationService(BaseService):
 
     def increment_usage(self, noti_usage_vo, count=1):
         noti_usage_mgr: NotificationUsageManager = self.locator.get_manager('NotificationUsageManager')
-        _LOGGER.debug(f"[increment_quota] Incremental Usage Count - Protocol {noti_usage_vo.protocol_id} (count: {count}")
+        _LOGGER.debug(f"[increment_usage] Incremental Usage Count - Protocol {noti_usage_vo.protocol_id} (count: {count})")
         noti_usage_mgr.incremental_notification_usage(noti_usage_vo, count)
 
     def get_notification_usage(self, protocol_vo, month, date):
@@ -465,8 +465,8 @@ class NotificationService(BaseService):
     def _check_quota_limit(protocol_id, limit, usage_month, usage_date, count):
         if 'month' in limit:
             if limit['month'] != -1 and limit['month'] < (usage_month + count):
-                raise ERROR_QUOTA_IS_EXCEEDED(protocol_id=protocol_id, usage=usage_month+count, limit=limit['month'])
+                raise ERROR_QUOTA_IS_EXCEEDED(protocol_id=protocol_id, usage=usage_month, limit=limit['month'])
 
         if 'day' in limit:
             if limit['day'] != -1 and limit['day'] < (usage_date + count):
-                raise ERROR_QUOTA_IS_EXCEEDED(protocol_id=protocol_id, usage=usage_date+count, limit=limit['day'])
+                raise ERROR_QUOTA_IS_EXCEEDED(protocol_id=protocol_id, usage=usage_date, limit=limit['day'])
