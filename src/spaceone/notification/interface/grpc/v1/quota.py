@@ -11,8 +11,7 @@ class Quota(BaseAPI, quota_pb2_grpc.QuotaServicer):
         params, metadata = self.parse_request(request, context)
 
         with self.locator.get_service('QuotaService', metadata) as quota_svc:
-            quota_svc.create(params)
-            return self.locator.get_info('QuotaInfo')
+            return self.locator.get_info('QuotaInfo', quota_svc.create(params))
 
     def update(self, request, context):
         params, metadata = self.parse_request(request, context)
