@@ -3,16 +3,11 @@ from spaceone.core.model.mongo_model import MongoModel
 from spaceone.notification.model.protocol_model import Protocol
 
 
-class QuotaLimit(EmbeddedDocument):
-    day = IntField(default=-1)
-    month = IntField(default=-1)
-
-
 class Quota(MongoModel):
     quota_id = StringField(max_length=40, generate_id='quota', unique=True)
     protocol = ReferenceField('Protocol', reverse_delete_rule=DO_NOTHING)
     protocol_id = StringField(max_length=40)
-    limit = EmbeddedDocumentField(QuotaLimit, default={})
+    limit = DictField(default={})
     domain_id = StringField(max_length=40)
 
     meta = {

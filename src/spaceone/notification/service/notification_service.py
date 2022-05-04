@@ -377,8 +377,7 @@ class NotificationService(BaseService):
 
         if quota_total_count:
             limit = quota_results[0].limit
-            _limit = {'month': limit.month, 'day': limit.day}
-            self._check_quota_limit(protocol_vo.protocol_id, _limit, usage_month, usage_date, count)
+            self._check_quota_limit(protocol_vo.protocol_id, limit, usage_month, usage_date, count)
         else:
             # Check Default Quota
             plugin_id = protocol_vo.plugin_info.plugin_id
