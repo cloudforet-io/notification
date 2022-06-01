@@ -42,7 +42,7 @@ class ProjectChannel(MongoModel):
         ],
         'ordering': ['name'],
         'indexes': [
-            'project_channel_id',
+            # 'project_channel_id',
             'protocol_id',
             'state',
             'tags'

@@ -28,7 +28,7 @@ class Notification(MongoModel):
         },
         'ordering': ['name'],
         'indexes': [
-            'notification_id',
+            # 'notification_id',
             'topic',
             'notification_type',
             'notification_level',
