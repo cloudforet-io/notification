@@ -41,7 +41,7 @@ class UserChannel(MongoModel):
         },
         'ordering': ['name'],
         'indexes': [
-            'user_channel_id',
+            # 'user_channel_id',
             'protocol_id',
             'state',
             'tags'

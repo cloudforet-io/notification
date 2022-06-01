@@ -21,7 +21,7 @@ class Quota(MongoModel):
         ],
         'ordering': ['quota_id'],
         'indexes': [
-            'quota_id',
+            # 'quota_id',
             'protocol_id',
             'domain_id'
         ]
