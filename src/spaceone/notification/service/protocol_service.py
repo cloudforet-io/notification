@@ -1,4 +1,5 @@
 import logging
+import copy
 from spaceone.core import cache
 from spaceone.core import utils
 from spaceone.core import config
@@ -351,11 +352,11 @@ class ProtocolService(BaseService):
         installed_protocol_names = [protocol_vo.name for protocol_vo in protocol_vos]
         _LOGGER.debug(f'[_create_default_protocol] Installed Plugins : {installed_protocol_names}')
 
-        for default_protocol in DEFAULT_INTERNAL_PROTOCOLS:
-            if default_protocol['name'] not in installed_protocol_names:
-                _LOGGER.debug(f'Create default protocol: {default_protocol["name"]}')
-                default_protocol['domain_id'] = domain_id
-                self.protocol_mgr.create_protocol(default_protocol)
+        for _protocol_data in DEFAULT_INTERNAL_PROTOCOLS:
+            if _protocol_data['name'] not in installed_protocol_names:
+                _LOGGER.debug(f'Create default protocol: {_protocol_data["name"]}')
+                _protocol_data['domain_id'] = domain_id
+                self.protocol_mgr.create_protocol(_protocol_data)
 
         return True
 
@@ -370,12 +371,12 @@ class ProtocolService(BaseService):
         _LOGGER.debug(f'[_initialize_protocol] Installed Plugins : {installed_protocol_ids}')
 
         global_conf = config.get_global()
-        for _protocol in global_conf.get('INSTALLED_PROTOCOL_PLUGINS', []):
-            if _protocol['plugin_info']['plugin_id'] not in installed_protocol_ids:
+        for _protocol_data in global_conf.get('INSTALLED_PROTOCOL_PLUGINS', []):
+            if _protocol_data['plugin_info']['plugin_id'] not in installed_protocol_ids:
                 try:
-                    _LOGGER.debug(f'[_initialize_protocol] Create init protocol: {_protocol["plugin_info"]["plugin_id"]}')
-                    _protocol['domain_id'] = domain_id
-                    self._create(_protocol)
+                    _LOGGER.debug(f'[_initialize_protocol] Create init protocol: {_protocol_data["plugin_info"]["plugin_id"]}')
+                    _protocol_data['domain_id'] = domain_id
+                    self._create(_protocol_data)
                 except Exception as e:
                     _LOGGER.error(f'[_initialize_protocol] {e}')
 
