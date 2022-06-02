@@ -352,8 +352,7 @@ class ProtocolService(BaseService):
         installed_protocol_names = [protocol_vo.name for protocol_vo in protocol_vos]
         _LOGGER.debug(f'[_create_default_protocol] Installed Plugins : {installed_protocol_names}')
 
-        for default_protocol in DEFAULT_INTERNAL_PROTOCOLS:
-            _protocol_data = copy.deepcopy(default_protocol)
+        for _protocol_data in DEFAULT_INTERNAL_PROTOCOLS:
             if _protocol_data['name'] not in installed_protocol_names:
                 _LOGGER.debug(f'Create default protocol: {_protocol_data["name"]}')
                 _protocol_data['domain_id'] = domain_id
@@ -372,8 +371,7 @@ class ProtocolService(BaseService):
         _LOGGER.debug(f'[_initialize_protocol] Installed Plugins : {installed_protocol_ids}')
 
         global_conf = config.get_global()
-        for installed_protocol in global_conf.get('INSTALLED_PROTOCOL_PLUGINS', []):
-            _protocol_data = copy.deepcopy(installed_protocol)
+        for _protocol_data in global_conf.get('INSTALLED_PROTOCOL_PLUGINS', []):
             if _protocol_data['plugin_info']['plugin_id'] not in installed_protocol_ids:
                 try:
                     _LOGGER.debug(f'[_initialize_protocol] Create init protocol: {_protocol_data["plugin_info"]["plugin_id"]}')
