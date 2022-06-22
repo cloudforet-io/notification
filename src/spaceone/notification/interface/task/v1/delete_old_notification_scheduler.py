@@ -7,7 +7,7 @@ from spaceone.core.scheduler import IntervalScheduler
 _LOGGER = logging.getLogger(__name__)
 
 
-class DeleteOldNotificationsScheduler(IntervalScheduler):
+class DeleteOldNotificationScheduler(IntervalScheduler):
 
     def __init__(self, queue, interval):
         super().__init__(queue, interval)
@@ -27,8 +27,8 @@ class DeleteOldNotificationsScheduler(IntervalScheduler):
         }
 
     def create_task(self):
-        stp = {
-            'name': 'delete_old_notifications_schedule',
+        task = {
+            'name': 'delete_old_notification_scheduler',
             'version': 'v1',
             'executionEngine': 'BaseWorker',
             'stages': [{
@@ -42,4 +42,4 @@ class DeleteOldNotificationsScheduler(IntervalScheduler):
             }]
         }
 
-        return [stp]
+        return [task]
