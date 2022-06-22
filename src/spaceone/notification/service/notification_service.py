@@ -307,11 +307,6 @@ class NotificationService(BaseService):
         query = params.get('query', {})
         return self.notification_mgr.stat_notifications(query)
 
-    @transaction
-    @check_required(['task_options', 'job_task_id', 'domain_id'])
-    def push_notification(self, params):
-        pass
-
     def push_queue(self, protocol_vo, channel_vo, notification_type, message, domain_id, data=None):
         task = {
             'name': 'dispatch_notification',
@@ -351,6 +346,7 @@ class NotificationService(BaseService):
         condition_date_iso = utils.datetime_to_iso8601(condition_date)
 
         query = {'filter': [{'k': 'created_at', 'v': condition_date_iso, 'o': 'datetime_lte'}]}
+        _LOGGER.debug(f"[delete_old_notifications] Query: {query}")
 
     def dispatch_notification(self, protocol_vo, channel_vo, notification_type, message, domain_id, data):
         plugin_mgr: PluginManager = self.locator.get_manager('PluginManager')
