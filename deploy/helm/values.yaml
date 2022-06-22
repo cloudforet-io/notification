@@ -29,6 +29,12 @@ application_scheduler:
       host: redis
       port: 6379
       channel: notification_job
+  SCHEDULERS:
+    delete_notification_scheduler:
+      backend: spaceone.notification.interface.task.v1.delete_old_notification_scheduler.DeleteOldNotificationScheduler
+      queue: notification_q
+      interval: 3600
+      minute: ':00'
 
 # Overwrite worker config
 application_worker:
