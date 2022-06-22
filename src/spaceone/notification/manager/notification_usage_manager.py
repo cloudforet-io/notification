@@ -38,5 +38,6 @@ class NotificationUsageManager(BaseManager):
     def incremental_notification_usage(noti_usage_vo, count):
         noti_usage_vo.increment("count", count)
 
-
-
+    @staticmethod
+    def incremental_notification_fail_count(noti_usage_vo, count):
+        noti_usage_vo.increment("fail_count", count)

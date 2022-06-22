@@ -7,17 +7,20 @@ class NotificationUsage(MongoModel):
     usage_date = StringField(max_length=255)
     usage_month = StringField(max_length=255)
     count = IntField(default=0)
+    fail_count = IntField(default=0)
     domain_id = StringField(max_length=255)
 
     meta = {
         'updatable_fields': [
-            'count'
+            'count',
+            'fail_count'
         ],
         'minimal_fields': [
             'protocol_id',
             'usage_date',
             'usage_month',
             'count',
+            'fail_count',
             'domain_id',
         ],
         'ordering': ['protocol_id', 'usage_month', 'usage_date'],

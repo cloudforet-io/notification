@@ -95,7 +95,7 @@ class QuotaService(BaseService):
         Returns:
             quota_vo (object)
         """
-        return self.protocol_mgr.get_protocol(params['protocol_id'], params['domain_id'])
+        return self.quota_mgr.get_quota(params['quota_id'], params['domain_id'])
 
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     @check_required(['domain_id'])

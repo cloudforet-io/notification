@@ -1,8 +1,8 @@
 import logging
 import datetime
 
+from spaceone.core import queue, utils
 from spaceone.core.service import *
-from spaceone.core import utils
 from spaceone.notification.lib.schedule import *
 from spaceone.notification.manager import IdentityManager
 from spaceone.notification.manager import NotificationManager
@@ -105,7 +105,8 @@ class NotificationService(BaseService):
                             self.dispatch_user_channel(params)
                     elif protocol_vo.protocol_type == 'EXTERNAL':
                         _LOGGER.info(f'[Notification] Dispatch Notification to project: {resource_id}')
-                        self.dispatch_notification(protocol_vo, prj_ch_vo, notification_type, message, domain_id)
+                        self.push_queue(protocol_vo, prj_ch_vo, notification_type, message, domain_id)
+                        # self.dispatch_notification(protocol_vo, prj_ch_vo, notification_type, message, domain_id)
                 else:
                     _LOGGER.info(f'[Notification] Skip Notification to project: {resource_id}')
             else:
@@ -138,7 +139,8 @@ class NotificationService(BaseService):
 
                 if dispatch_subscribe and dispatch_schedule:
                     _LOGGER.info(f'[Notification] Dispatch Notification to user: {resource_id}')
-                    self.dispatch_notification(protocol_vo, user_ch_vo, notification_type, message, domain_id)
+                    self.push_queue(protocol_vo, user_ch_vo, notification_type, message, domain_id)
+                    # self.dispatch_notification(protocol_vo, user_ch_vo, notification_type, message, domain_id)
                 else:
                     _LOGGER.info(f'[Notification] Skip Notification to user: {resource_id}')
             else:
@@ -165,12 +167,17 @@ class NotificationService(BaseService):
             None
         """
         domain_id = params['domain_id']
+        protocol_id = params['protocol_id']
+        notification_type = params.get('notification_type', 'INFO')
+        data = params['data']
+        message = params.get('message', {})
 
         protocol_mgr: ProtocolManager = self.locator.get_manager('ProtocolManager')
-        protocol_vo = protocol_mgr.get_protocol(params['protocol_id'], domain_id)
+        protocol_vo = protocol_mgr.get_protocol(protocol_id, domain_id)
 
-        self.dispatch_notification(protocol_vo, None, params.get('notification_type', 'INFO'),
-                                   params.get('message', {}), domain_id, data=params['data'])
+        self.push_queue(protocol_vo, None, notification_type, message, domain_id, data)
+        # self.dispatch_notification(protocol_vo, None, params.get('notification_type', 'INFO'),
+        #                            params.get('message', {}), domain_id, data=params['data'])
 
     @transaction(append_meta={'authorization.scope': 'USER'})
     @check_required(['notification_id', 'domain_id'])
@@ -300,6 +307,35 @@ class NotificationService(BaseService):
         query = params.get('query', {})
         return self.notification_mgr.stat_notifications(query)
 
+    @transaction
+    @check_required(['task_options', 'job_task_id', 'domain_id'])
+    def push_notification(self, params):
+        pass
+
+    def push_queue(self, protocol_vo, channel_vo, notification_type, message, domain_id, data=None):
+        task = {
+            'name': 'dispatch_notification',
+            'version': 'v1',
+            'executionEngine': 'BaseWorker',
+            'stages': [{
+                'locator': 'SERVICE',
+                'name': 'NotificationService',
+                'metadata': self.transaction.meta,
+                'method': 'dispatch_notification',
+                'params': {
+                    'protocol_vo': protocol_vo,
+                    'channel_vo': channel_vo,
+                    'notification_type': notification_type,
+                    'message': message,
+                    'domain_id': domain_id,
+                    'data': data
+                }
+            }]
+        }
+
+        _LOGGER.debug(f'[push_queue] task: {task}')
+        queue.put('notification_q', utils.dump_json(task))
+
     @transaction(append_meta={'authorization.scope': 'DOMAIN'})
     def delete_old_notifications(self, params):
         """ Delete old notifications
@@ -316,7 +352,7 @@ class NotificationService(BaseService):
 
         query = {'filter': [{'k': 'created_at', 'v': condition_date_iso, 'o': 'datetime_lte'}]}
 
-    def dispatch_notification(self, protocol_vo, channel_vo, notification_type, message, domain_id, **kwargs):
+    def dispatch_notification(self, protocol_vo, channel_vo, notification_type, message, domain_id, data):
         plugin_mgr: PluginManager = self.locator.get_manager('PluginManager')
         secret_mgr: SecretManager = self.locator.get_manager('SecretManager')
 
@@ -331,8 +367,8 @@ class NotificationService(BaseService):
             if secret_id := plugin_info.get('secret_id'):
                 secret_data = secret_mgr.get_secret_data(secret_id, domain_id)
 
-            if 'data' in kwargs:
-                channel_data = kwargs.get('data')
+            if data is not None:
+                channel_data = data
             elif metadata.get('data_type') == 'PLAIN_TEXT':
                 channel_data = channel_vo.data
             elif metadata.get('data_type') == 'SECRET':
@@ -366,8 +402,11 @@ class NotificationService(BaseService):
         month, date = self.get_month_date()
         noti_usage_vo, usage_month, usage_date = self.get_notification_usage(protocol_vo, month, date)
         self.check_quota(protocol_vo, usage_month, usage_date)
-        plugin_mgr.dispatch_notification(secret_data, channel_data, notification_type, message, options)
-        self.increment_usage(noti_usage_vo)
+        try:
+            plugin_mgr.dispatch_notification(secret_data, channel_data, notification_type, message, options)
+            self.increment_usage(noti_usage_vo)
+        except Exception as e:
+            self.increment_fail_count(noti_usage_vo)
 
     def check_quota(self, protocol_vo, usage_month, usage_date, count=1):
         quota_mgr: QuotaManager = self.locator.get_manager('QuotaManager')
@@ -390,6 +429,12 @@ class NotificationService(BaseService):
         noti_usage_mgr: NotificationUsageManager = self.locator.get_manager('NotificationUsageManager')
         _LOGGER.debug(f"[increment_usage] Incremental Usage Count - Protocol {noti_usage_vo.protocol_id} (count: {count})")
         noti_usage_mgr.incremental_notification_usage(noti_usage_vo, count)
+
+    def increment_fail_count(self, noti_usage_vo, count=1):
+        noti_usage_mgr: NotificationUsageManager = self.locator.get_manager('NotificationUsageManager')
+        _LOGGER.debug(
+            f"[increment_fail_count] Incremental Fail Count - Protocol {noti_usage_vo.protocol_id} (count: {count})")
+        noti_usage_mgr.incremental_notification_fail_count(noti_usage_vo, count)
 
     def get_notification_usage(self, protocol_vo, month, date):
         usage_month = 0
