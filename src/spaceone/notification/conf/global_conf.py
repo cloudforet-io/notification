@@ -59,6 +59,13 @@ CONNECTORS = {
     },
 }
 
+# Scheduler Settings
+QUEUES = {}
+SCHEDULERS = {}
+WORKERS = {}
+TOKEN = ""
+TOKEN_INFO = {}
+
 ENDPOINTS = [
     # {
     #     'service': 'notification',
