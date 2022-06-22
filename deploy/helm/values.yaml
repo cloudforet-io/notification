@@ -4,8 +4,8 @@
 enabled: true
 developer: false
 grpc: true
-scheduler: false
-worker: false
+scheduler: true
+worker: true
 rest: false
 name: notification
 
@@ -21,6 +21,28 @@ application: {}
 ##########################
 #sidecar:
 
+# Overwrite scheduler config
+application_scheduler:
+  QUEUES:
+    notification_q:
+      backend: spaceone.core.queue.redis_queue.RedisQueue
+      host: redis
+      port: 6379
+      channel: notification_job
+
+# Overwrite worker config
+application_worker:
+  QUEUES:
+    notification_q:
+      backend: spaceone.core.queue.redis_queue.RedisQueue
+      host: redis
+      port: 6379
+      channel: notification_job
+  WORKERS:
+    notification_worker:
+      backend: spaceone.core.scheduler.worker.BaseWorker
+      queue: notification_q
+      pool: 1
 
 ##########################
 # Local volumes
