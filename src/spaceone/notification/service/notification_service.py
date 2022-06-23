@@ -420,20 +420,22 @@ class NotificationService(BaseService):
         except Exception as e:
             self.increment_fail_count(noti_usage_vo)
 
-    def check_quota(self, protocol_id, plugin_id, usage_month, usage_date, count=1):
+    def check_quota(self, protocol_vo, usage_month, usage_date, count=1):
         quota_mgr: QuotaManager = self.locator.get_manager('QuotaManget_notification_usageager')
 
-        query = {'filter': [{'k': 'protocol_id', 'v': protocol_id, 'o': 'eq'}]}
+        query = {'filter': [{'k': 'protocol', 'v': protocol_vo, 'o': 'eq'}]}
         quota_results, quota_total_count = quota_mgr.list_quotas(query)
 
         if quota_total_count:
             limit = quota_results[0].limit
-            self._check_quota_limit(protocol_id, limit, usage_month, usage_date, count)
+            self._check_quota_limit(protocol_vo.protocol_id, limit, usage_month, usage_date, count)
         else:
             # Check Default Quota
+            plugin_id = protocol_vo.plugin_info.plugin_id
+
             if plugin_id in DEFAULT_QUOTA:
                 limit = DEFAULT_QUOTA[plugin_id]
-                self._check_quota_limit(protocol_id, limit, usage_month, usage_date, count)
+                self._check_quota_limit(protocol_vo.protocol_id, limit, usage_month, usage_date, count)
 
     def increment_usage(self, noti_usage_vo, count=1):
         noti_usage_mgr: NotificationUsageManager = self.locator.get_manager('NotificationUsageManager')
