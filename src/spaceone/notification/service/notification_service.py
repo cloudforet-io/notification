@@ -421,7 +421,7 @@ class NotificationService(BaseService):
             self.increment_fail_count(noti_usage_vo)
 
     def check_quota(self, protocol_vo, usage_month, usage_date, count=1):
-        quota_mgr: QuotaManager = self.locator.get_manager('QuotaManget_notification_usageager')
+        quota_mgr: QuotaManager = self.locator.get_manager('QuotaManager')
 
         query = {'filter': [{'k': 'protocol', 'v': protocol_vo, 'o': 'eq'}]}
         quota_results, quota_total_count = quota_mgr.list_quotas(query)
