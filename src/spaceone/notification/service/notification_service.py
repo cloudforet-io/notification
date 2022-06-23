@@ -413,8 +413,9 @@ class NotificationService(BaseService):
     def _dispatch_notification(self, protocol_vo, secret_data, channel_data, notification_type, message, options, plugin_mgr):
         month, date = self.get_month_date()
         noti_usage_vo, usage_month, usage_date = self.get_notification_usage(protocol_vo, month, date)
-        self.check_quota(protocol_vo, usage_month, usage_date)
+
         try:
+            self.check_quota(protocol_vo, usage_month, usage_date)
             plugin_mgr.dispatch_notification(secret_data, channel_data, notification_type, message, options)
             self.increment_usage(noti_usage_vo)
         except Exception as e:
