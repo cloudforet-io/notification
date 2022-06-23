@@ -106,7 +106,9 @@ class NotificationService(BaseService):
                     elif protocol_vo.protocol_type == 'EXTERNAL':
                         _LOGGER.info(f'[Notification] Dispatch Notification to project: {resource_id}')
                         channel_data = self.get_channel_data(prj_ch_vo, protocol_vo, domain_id)
-                        self.push_queue(protocol_vo.protocol_id, channel_data, notification_type, message, domain_id)
+                        secret_data = self.get_secret_data(protocol_vo, domain_id)
+
+                        self.push_queue(protocol_vo.protocol_id, channel_data, secret_data, notification_type, message, domain_id)
                 else:
                     _LOGGER.info(f'[Notification] Skip Notification to project: {resource_id}')
             else:
@@ -142,7 +144,9 @@ class NotificationService(BaseService):
                 if dispatch_subscribe and dispatch_schedule:
                     _LOGGER.info(f'[Notification] Dispatch Notification to user: {resource_id}')
                     channel_data = self.get_channel_data(user_ch_vo, protocol_vo, domain_id)
-                    self.push_queue(protocol_vo.protocol_id, channel_data, notification_type, message, domain_id)
+                    secret_data = self.get_secret_data(protocol_vo, domain_id)
+
+                    self.push_queue(protocol_vo.protocol_id, channel_data, secret_data, notification_type, message, domain_id)
                 else:
                     _LOGGER.info(f'[Notification] Skip Notification to user: {resource_id}')
             else:
@@ -176,8 +180,9 @@ class NotificationService(BaseService):
 
         protocol_mgr: ProtocolManager = self.locator.get_manager('ProtocolManager')
         protocol_vo = protocol_mgr.get_protocol(protocol_id, domain_id)
+        secret_data = self.get_secret_data(protocol_vo, domain_id)
 
-        self.push_queue(protocol_vo.protocol_id, data, notification_type, message, domain_id)
+        self.push_queue(protocol_vo.protocol_id, data, secret_data, notification_type, message, domain_id)
 
     @transaction(append_meta={'authorization.scope': 'USER'})
     @check_required(['notification_id', 'domain_id'])
@@ -307,7 +312,7 @@ class NotificationService(BaseService):
         query = params.get('query', {})
         return self.notification_mgr.stat_notifications(query)
 
-    def push_queue(self, protocol_id, channel_data, notification_type, message, domain_id):
+    def push_queue(self, protocol_id, channel_data, secret_data, notification_type, message, domain_id):
         task = {
             'name': 'dispatch_notification',
             'version': 'v1',
@@ -320,6 +325,7 @@ class NotificationService(BaseService):
                 'params': {
                     'protocol_id': protocol_id,
                     'channel_data': channel_data,
+                    'secret_data': secret_data,
                     'notification_type': notification_type,
                     'message': message,
                     'domain_id': domain_id,
@@ -361,21 +367,26 @@ class NotificationService(BaseService):
 
         return channel_data
 
-    def dispatch_notification(self, protocol_id, channel_data, notification_type, message, domain_id):
+    def get_secret_data(self, protocol_vo, domain_id):
+        secret_mgr: SecretManager = self.locator.get_manager('SecretManager')
+
+        secret_data = {}
+        plugin_info = protocol_vo.plugin_info.to_dict()
+
+        if secret_id := plugin_info.get('secret_id'):
+            secret_data = secret_mgr.get_secret_data(secret_id, domain_id)
+
+        return secret_data
+
+    def dispatch_notification(self, protocol_id, channel_data, secret_data, notification_type, message, domain_id):
         protocol_mgr: ProtocolManager = self.locator.get_manager('ProtocolManager')
         plugin_mgr: PluginManager = self.locator.get_manager('PluginManager')
-        secret_mgr: SecretManager = self.locator.get_manager('SecretManager')
 
         protocol_vo = protocol_mgr.get_protocol(protocol_id, domain_id)
 
         if protocol_vo.state == 'ENABLED':
             plugin_info = protocol_vo.plugin_info.to_dict()
-
-            secret_data = {}
             options = plugin_info.get('options', {})
-
-            if secret_id := plugin_info.get('secret_id'):
-                secret_data = secret_mgr.get_secret_data(secret_id, domain_id)
 
             _LOGGER.debug(f'[Plugin Initialize] plugin_id: {plugin_info["plugin_id"]} | version: {plugin_info["version"]} '
                           f'| domain_id: {domain_id}')
