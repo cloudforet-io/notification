@@ -474,6 +474,8 @@ class NotificationService(BaseService):
             valid_weekday = check_weekday_schedule(now_time, schedule.day_of_week)
             valid_time = check_time_schedule(now_time, schedule.start_hour, schedule.end_hour)
 
+            _LOGGER.debug(f'Weekday: {valid_weekday} | Time {valid_time}')
+
             if valid_weekday and valid_time:
                 return True
         else:
