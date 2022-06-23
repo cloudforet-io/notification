@@ -16,13 +16,7 @@ imagePullPolicy: IfNotPresent
 
 database: {}
 
-application:
-  QUEUES:
-    notification_q:
-      backend: spaceone.core.queue.redis_queue.RedisQueue
-      host: redis
-      port: 6379
-      channel: notification_job
+application: {}
 
 # local sidecar
 ##########################
@@ -30,12 +24,6 @@ application:
 
 # Overwrite scheduler config
 application_scheduler:
-  QUEUES:
-    notification_q:
-      backend: spaceone.core.queue.redis_queue.RedisQueue
-      host: redis
-      port: 6379
-      channel: notification_job
   SCHEDULERS:
     delete_notification_scheduler:
       backend: spaceone.notification.interface.task.v1.delete_old_notification_scheduler.DeleteOldNotificationScheduler
@@ -44,12 +32,6 @@ application_scheduler:
 
 # Overwrite worker config
 application_worker:
-  QUEUES:
-    notification_q:
-      backend: spaceone.core.queue.redis_queue.RedisQueue
-      host: redis
-      port: 6379
-      channel: notification_job
   WORKERS:
     notification_worker:
       backend: spaceone.core.scheduler.worker.BaseWorker
