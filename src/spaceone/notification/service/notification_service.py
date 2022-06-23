@@ -410,9 +410,7 @@ class NotificationService(BaseService):
         else:
             _LOGGER.info('[Notification] Protocol is disabled. skip notification')
 
-    def _dispatch_notification(self, protocol_vo, secret_data, channel_data, notification_type, message, options,
-                               plugin_mgr):
-
+    def _dispatch_notification(self, protocol_vo, secret_data, channel_data, notification_type, message, options, plugin_mgr):
         month, date = self.get_month_date()
         noti_usage_vo, usage_month, usage_date = self.get_notification_usage(protocol_vo, month, date)
         self.check_quota(protocol_vo, usage_month, usage_date)
@@ -423,7 +421,7 @@ class NotificationService(BaseService):
             self.increment_fail_count(noti_usage_vo)
 
     def check_quota(self, protocol_id, plugin_id, usage_month, usage_date, count=1):
-        quota_mgr: QuotaManager = self.locator.get_manager('QuotaManager')
+        quota_mgr: QuotaManager = self.locator.get_manager('QuotaManget_notification_usageager')
 
         query = {'filter': [{'k': 'protocol_id', 'v': protocol_id, 'o': 'eq'}]}
         quota_results, quota_total_count = quota_mgr.list_quotas(query)
@@ -448,7 +446,7 @@ class NotificationService(BaseService):
             f"[increment_fail_count] Incremental Fail Count - Protocol {noti_usage_vo.protocol_id} (count: {count})")
         noti_usage_mgr.incremental_notification_fail_count(noti_usage_vo, count)
 
-    def get_notification_usage(self, protocol_id, domain_id, month, date):
+    def get_notification_usage(self, protocol_vo, month, date):
         usage_month = 0
         usage_date = 0
         noti_usage_vo = None
@@ -457,7 +455,7 @@ class NotificationService(BaseService):
 
         month_query = {
             'filter': [
-                {'k': 'protocol_id', 'v': protocol_id, 'o': 'eq'},
+                {'k': 'protocol_id', 'v': protocol_vo.protocol_id, 'o': 'eq'},
                 {'k': 'usage_month', 'v': month, 'o': 'eq'}
             ]
         }
@@ -471,10 +469,10 @@ class NotificationService(BaseService):
 
         if not noti_usage_vo:
             params = {
-                'protocol_id': protocol_id,
+                'protocol_id': protocol_vo.protocol_id,
                 'usage_month': month,
                 'usage_date': date,
-                'domain_id': domain_id
+                'domain_id': protocol_vo.domain_id
             }
             noti_usage_vo = noti_usage_mgr.create_notification_usage(params)
 
