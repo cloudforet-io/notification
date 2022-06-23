@@ -105,8 +105,8 @@ class NotificationService(BaseService):
                             self.dispatch_user_channel(params)
                     elif protocol_vo.protocol_type == 'EXTERNAL':
                         _LOGGER.info(f'[Notification] Dispatch Notification to project: {resource_id}')
-                        self.push_queue(protocol_vo, prj_ch_vo, notification_type, message, domain_id)
-                        # self.dispatch_notification(protocol_vo, prj_ch_vo, notification_type, message, domain_id)
+                        channel_data = self.get_channel_data(prj_ch_vo, protocol_vo, domain_id)
+                        self.push_queue(protocol_vo.protocol_id, channel_data, notification_type, message, domain_id)
                 else:
                     _LOGGER.info(f'[Notification] Skip Notification to project: {resource_id}')
             else:
@@ -141,8 +141,8 @@ class NotificationService(BaseService):
 
                 if dispatch_subscribe and dispatch_schedule:
                     _LOGGER.info(f'[Notification] Dispatch Notification to user: {resource_id}')
-                    self.push_queue(protocol_vo, user_ch_vo, notification_type, message, domain_id)
-                    # self.dispatch_notification(protocol_vo, user_ch_vo, notification_type, message, domain_id)
+                    channel_data = self.get_channel_data(user_ch_vo, protocol_vo, domain_id)
+                    self.push_queue(protocol_vo.protocol_id, channel_data, notification_type, message, domain_id)
                 else:
                     _LOGGER.info(f'[Notification] Skip Notification to user: {resource_id}')
             else:
@@ -177,9 +177,7 @@ class NotificationService(BaseService):
         protocol_mgr: ProtocolManager = self.locator.get_manager('ProtocolManager')
         protocol_vo = protocol_mgr.get_protocol(protocol_id, domain_id)
 
-        self.push_queue(protocol_vo, None, notification_type, message, domain_id, data)
-        # self.dispatch_notification(protocol_vo, None, params.get('notification_type', 'INFO'),
-        #                            params.get('message', {}), domain_id, data=params['data'])
+        self.push_queue(protocol_vo.protocol_id, data, notification_type, message, domain_id)
 
     @transaction(append_meta={'authorization.scope': 'USER'})
     @check_required(['notification_id', 'domain_id'])
@@ -309,7 +307,7 @@ class NotificationService(BaseService):
         query = params.get('query', {})
         return self.notification_mgr.stat_notifications(query)
 
-    def push_queue(self, protocol_vo, channel_vo, notification_type, message, domain_id, data=None):
+    def push_queue(self, protocol_id, channel_data, notification_type, message, domain_id):
         task = {
             'name': 'dispatch_notification',
             'version': 'v1',
@@ -320,12 +318,11 @@ class NotificationService(BaseService):
                 'metadata': self.transaction.meta,
                 'method': 'dispatch_notification',
                 'params': {
-                    'protocol_vo': protocol_vo,
-                    'channel_vo': channel_vo,
+                    'protocol_id': protocol_id,
+                    'channel_data': channel_data,
                     'notification_type': notification_type,
                     'message': message,
                     'domain_id': domain_id,
-                    'data': data
                 }
             }]
         }
@@ -350,27 +347,35 @@ class NotificationService(BaseService):
         query = {'filter': [{'k': 'created_at', 'v': condition_date_iso, 'o': 'datetime_lte'}]}
         _LOGGER.debug(f"[delete_old_notifications] Query: {query}")
 
-    def dispatch_notification(self, protocol_vo, channel_vo, notification_type, message, domain_id, data):
+    def get_channel_data(self, channel_vo, protocol_vo, domain_id):
+        secret_mgr: SecretManager = self.locator.get_manager('SecretManager')
+
+        channel_data = None
+        plugin_info = protocol_vo.plugin_info.to_dict()
+        plugin_metadata = plugin_info.get('metadata', {})
+
+        if plugin_metadata.get('data_type') == 'PLAIN_TEXT':
+            channel_data = channel_vo.data
+        elif plugin_metadata.get('data_type') == 'SECRET':
+            channel_data = secret_mgr.get_secret_data(channel_vo.secret_id, domain_id)
+
+        return channel_data
+
+    def dispatch_notification(self, protocol_id, channel_data, notification_type, message, domain_id):
+        protocol_mgr: ProtocolManager = self.locator.get_manager('ProtocolManager')
         plugin_mgr: PluginManager = self.locator.get_manager('PluginManager')
         secret_mgr: SecretManager = self.locator.get_manager('SecretManager')
+
+        protocol_vo = protocol_mgr.get_protocol(protocol_id, domain_id)
 
         if protocol_vo.state == 'ENABLED':
             plugin_info = protocol_vo.plugin_info.to_dict()
 
             secret_data = {}
-            channel_data = {}
-            metadata = plugin_info.get('metadata', {})
             options = plugin_info.get('options', {})
 
             if secret_id := plugin_info.get('secret_id'):
                 secret_data = secret_mgr.get_secret_data(secret_id, domain_id)
-
-            if data is not None:
-                channel_data = data
-            elif metadata.get('data_type') == 'PLAIN_TEXT':
-                channel_data = channel_vo.data
-            elif metadata.get('data_type') == 'SECRET':
-                channel_data = secret_mgr.get_secret_data(channel_vo.secret_id, domain_id)
 
             _LOGGER.debug(f'[Plugin Initialize] plugin_id: {plugin_info["plugin_id"]} | version: {plugin_info["version"]} '
                           f'| domain_id: {domain_id}')
@@ -388,8 +393,8 @@ class NotificationService(BaseService):
             except Exception as e:
                 _LOGGER.error(f'[Notification] Plugin Error: {e}')
 
-            self._dispatch_notification(protocol_vo, secret_data, channel_data, notification_type, message,
-                                        plugin_info.get('options', {}), plugin_mgr)
+            self._dispatch_notification(protocol_vo, secret_data, channel_data, notification_type,
+                                        message, options, plugin_mgr)
 
         else:
             _LOGGER.info('[Notification] Protocol is disabled. skip notification')
@@ -406,22 +411,20 @@ class NotificationService(BaseService):
         except Exception as e:
             self.increment_fail_count(noti_usage_vo)
 
-    def check_quota(self, protocol_vo, usage_month, usage_date, count=1):
+    def check_quota(self, protocol_id, plugin_id, usage_month, usage_date, count=1):
         quota_mgr: QuotaManager = self.locator.get_manager('QuotaManager')
 
-        query = {'filter': [{'k': 'protocol', 'v': protocol_vo, 'o': 'eq'}]}
+        query = {'filter': [{'k': 'protocol_id', 'v': protocol_id, 'o': 'eq'}]}
         quota_results, quota_total_count = quota_mgr.list_quotas(query)
 
         if quota_total_count:
             limit = quota_results[0].limit
-            self._check_quota_limit(protocol_vo.protocol_id, limit, usage_month, usage_date, count)
+            self._check_quota_limit(protocol_id, limit, usage_month, usage_date, count)
         else:
             # Check Default Quota
-            plugin_id = protocol_vo.plugin_info.plugin_id
-
             if plugin_id in DEFAULT_QUOTA:
                 limit = DEFAULT_QUOTA[plugin_id]
-                self._check_quota_limit(protocol_vo.protocol_id, limit, usage_month, usage_date, count)
+                self._check_quota_limit(protocol_id, limit, usage_month, usage_date, count)
 
     def increment_usage(self, noti_usage_vo, count=1):
         noti_usage_mgr: NotificationUsageManager = self.locator.get_manager('NotificationUsageManager')
@@ -434,7 +437,7 @@ class NotificationService(BaseService):
             f"[increment_fail_count] Incremental Fail Count - Protocol {noti_usage_vo.protocol_id} (count: {count})")
         noti_usage_mgr.incremental_notification_fail_count(noti_usage_vo, count)
 
-    def get_notification_usage(self, protocol_vo, month, date):
+    def get_notification_usage(self, protocol_id, domain_id, month, date):
         usage_month = 0
         usage_date = 0
         noti_usage_vo = None
@@ -443,7 +446,7 @@ class NotificationService(BaseService):
 
         month_query = {
             'filter': [
-                {'k': 'protocol_id', 'v': protocol_vo.protocol_id, 'o': 'eq'},
+                {'k': 'protocol_id', 'v': protocol_id, 'o': 'eq'},
                 {'k': 'usage_month', 'v': month, 'o': 'eq'}
             ]
         }
@@ -457,10 +460,10 @@ class NotificationService(BaseService):
 
         if not noti_usage_vo:
             params = {
-                'protocol_id': protocol_vo.protocol_id,
+                'protocol_id': protocol_id,
                 'usage_month': month,
                 'usage_date': date,
-                'domain_id': protocol_vo.domain_id
+                'domain_id': domain_id
             }
             noti_usage_vo = noti_usage_mgr.create_notification_usage(params)
 
