@@ -28,7 +28,7 @@ application_scheduler:
     delete_notification_scheduler:
       backend: spaceone.notification.interface.task.v1.delete_old_notification_scheduler.DeleteOldNotificationScheduler
       queue: notification_q
-      interval: 60
+      interval: 86400
 
 # Overwrite worker config
 application_worker:
