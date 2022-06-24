@@ -16,6 +16,7 @@ from spaceone.notification.manager import NotificationUsageManager
 from spaceone.notification.conf.global_conf import *
 
 _LOGGER = logging.getLogger(__name__)
+OLD_NOTIFICATION_DAYS = 60
 
 
 @authentication_handler
@@ -346,12 +347,18 @@ class NotificationService(BaseService):
         Returns:
             None
         """
-
-        condition_date = datetime.datetime.now() - datetime.timedelta(days=4)
+        now = datetime.datetime.now()
+        now = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        condition_date = now - datetime.timedelta(days=OLD_NOTIFICATION_DAYS)
         condition_date_iso = utils.datetime_to_iso8601(condition_date)
 
         query = {'filter': [{'k': 'created_at', 'v': condition_date_iso, 'o': 'datetime_lte'}]}
         _LOGGER.debug(f"[delete_old_notifications] Query: {query}")
+
+        notification_vos, total_count = self.notification_mgr.list_notifications(query)
+
+        _LOGGER.debug(f"[delete_old_notifications] Old Notification Count: {total_count}")
+        notification_vos.delete()
 
     def get_channel_data(self, channel_vo, protocol_vo, domain_id):
         secret_mgr: SecretManager = self.locator.get_manager('SecretManager')
