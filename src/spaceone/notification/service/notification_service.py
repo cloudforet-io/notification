@@ -163,7 +163,7 @@ class NotificationService(BaseService):
 
         Args:
             params (dict): {
-                'protocol_di': 'str',
+                'protocol_id': 'str',
                 'data': 'str',
                 'message': 'dict',
                 'notification_type', 'str',
