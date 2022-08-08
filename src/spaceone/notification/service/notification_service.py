@@ -56,11 +56,33 @@ class NotificationService(BaseService):
 
         identity_mgr.get_resource(resource_id, resource_type, domain_id)
 
-        if resource_type == 'identity.Project':
+        if resource_type == 'identity.Domain':
+            self.dispatch_domain(params)
+
+        elif resource_type == 'identity.Project':
             self.dispatch_project_channel(params)
 
         elif resource_type == 'identity.User':
             self.dispatch_user_channel(params)
+
+    def dispatch_domain(self, params):
+        _LOGGER.debug(f'[Dispatch Domain] Domain ID: {params["resource_id"]}')
+
+        identity_mgr: IdentityManager = self.locator.get_manager('IdentityManager')
+        users = identity_mgr.get_all_users_in_domain(params['resource_id'])
+
+        for user in users:
+            user_channel_params = {
+                'notification_type': params.get('notification_type', 'INFO'),
+                'notification_level': params.get('notification_level', 'ALL'),
+                'topic': params['topic'],
+                'message': params['message'],
+                'resource_type': 'identity.User',
+                'resource_id': user['user_id'],
+                'domain_id': params['resource_id']
+            }
+
+            self.dispatch_user_channel(user_channel_params)
 
     def dispatch_project_channel(self, params):
         _LOGGER.debug(f'[Dispatch Project Channel] Project ID: {params["resource_id"]}')
