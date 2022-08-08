@@ -53,6 +53,10 @@ class NotificationService(BaseService):
         domain_id = params['domain_id']
         resource_type = params['resource_type']
         resource_id = params['resource_id']
+        message = params['message']
+
+        domain_info = identity_mgr.get_domain_info(domain_id)
+        message['domain_name'] = domain_info['name']
 
         identity_mgr.get_resource(resource_id, resource_type, domain_id)
 
