@@ -56,7 +56,7 @@ class NotificationService(BaseService):
         message = params['message']
 
         domain_info = identity_mgr.get_domain_info(domain_id)
-        message['domain_name'] = domain_info['name']
+        message['domain_name'] = self.get_domain_name(domain_info)
 
         identity_mgr.get_resource(resource_id, resource_type, domain_id)
 
@@ -565,3 +565,11 @@ class NotificationService(BaseService):
             if limit['day'] != -1 and limit['day'] < (usage_date + count):
                 raise ERROR_QUOTA_IS_EXCEEDED(protocol_id=protocol_id,
                                               limit=f'limit.day=({usage_date}/{limit["day"]})')
+
+    @staticmethod
+    def get_domain_name(domain_info):
+        _tags = domain_info.get('tags', {})
+        if description := _tags.get('description'):
+            return description
+        else:
+            return domain_info['name']
