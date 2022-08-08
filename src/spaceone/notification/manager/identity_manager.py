@@ -29,3 +29,13 @@ class IdentityManager(BaseManager):
     def get_resource(self, resource_id, resource_type, domain_id):
         get_method = _GET_RESOURCE_METHODS[resource_type]
         return self.identity_connector.dispatch(get_method['dispatch_method'], {get_method['key']: resource_id, 'domain_id': domain_id})
+
+    def get_all_users_in_domain(self, domain_id):
+        query = {
+            'state': 'ENABLED',
+            'user_type': 'USER',
+            'domain_id': domain_id
+        }
+
+        response = self.identity_connector.dispatch('User.list', query)
+        return response.get('results', [])
