@@ -30,6 +30,9 @@ class IdentityManager(BaseManager):
         get_method = _GET_RESOURCE_METHODS[resource_type]
         return self.identity_connector.dispatch(get_method['dispatch_method'], {get_method['key']: resource_id, 'domain_id': domain_id})
 
+    def get_domain_info(self, domain_id):
+        return self.identity_connector.dispatch('Domain.get', {'domain_id': domain_id})
+
     def get_all_users_in_domain(self, domain_id):
         query = {
             'state': 'ENABLED',
