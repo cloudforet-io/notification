@@ -6,6 +6,10 @@ from spaceone.core.connector.space_connector import SpaceConnector
 _LOGGER = logging.getLogger(__name__)
 
 _GET_RESOURCE_METHODS = {
+    'identity.Domain': {
+        'dispatch_method': 'Domain.get',
+        'key': 'domain_id'
+    },
     'identity.Project': {
         'dispatch_method': 'Project.get',
         'key': 'project_id'
