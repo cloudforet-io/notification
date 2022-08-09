@@ -72,12 +72,6 @@ class NotificationService(BaseService):
     def dispatch_domain(self, params):
         _LOGGER.debug(f'[Dispatch Domain] Domain ID: {params["resource_id"]}')
 
-        resource_id = params['resource_id']
-        domain_id = params['domain_id']
-
-        if resource_id != domain_id:
-            raise ERROR_INVALID_DOMAIN(resource_id=resource_id)
-
         identity_mgr: IdentityManager = self.locator.get_manager('IdentityManager')
         users = identity_mgr.get_all_users_in_domain(params['resource_id'])
 
