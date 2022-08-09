@@ -17,3 +17,6 @@ class ERROR_WRONG_SCHEDULE_HOURS_SETTINGS(ERROR_BASE):
 
 class ERROR_WRONG_SCHEDULE_DAY(ERROR_BASE):
     _message = "Invalid day to set schedule (day = {day})"
+
+class ERROR_INVALID_DOMAIN(ERROR_BASE):
+    _message = "Invalid resource_id (domain_id={resource_id})"
