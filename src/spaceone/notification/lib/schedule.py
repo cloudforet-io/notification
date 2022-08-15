@@ -29,13 +29,6 @@ def check_weekday_schedule(now_time, day_of_week):
 def check_time_schedule(now_time, start_hour, end_hour):
     hour = now_time.hour
 
-    print("------")
-    print(f'now_time: {now_time}')
-    print(f'hour: {hour}')
-    print(f'start hour: {start_hour}')
-    print(f'end hour: {end_hour}')
-    print("------")
-
     if start_hour < end_hour:
         if start_hour <= hour < end_hour:
             return True
