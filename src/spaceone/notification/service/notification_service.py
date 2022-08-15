@@ -247,7 +247,7 @@ class NotificationService(BaseService):
         self.notification_mgr.set_read_notification(params['notifications'], params['domain_id'])
 
     @transaction(append_meta={'authorization.scope': 'USER'})
-    @check_required(['notifications', 'user_id', 'domain_id'])
+    @check_required(['notifications', 'domain_id'])
     def delete_all(self, params):
         """  Delete all notifications of target users
 
@@ -261,14 +261,13 @@ class NotificationService(BaseService):
         Returns:
             None
         """
-        # user_id = self.transaction.get_meta('user_id')
+        user_id = self.transaction.get_meta('user_id')
         # domain_id = self.transaction.get_meta('domain_id')
-        print(f'user_id: {params["user_id"]}')
+        print(f'user_id: {user_id}')
         print(f'domain_id: {params["domain_id"]}')
 
         self.notification_mgr.delete_all_notifications(params['notifications'],
-                                                       params['user_id'],
-                                                       params['domain_id'])
+                                                       user_id, params['domain_id'])
 
     @transaction(append_meta={'authorization.scope': 'USER'})
     @check_required(['notification_id', 'domain_id'])
