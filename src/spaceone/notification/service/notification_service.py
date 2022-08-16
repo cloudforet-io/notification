@@ -262,12 +262,7 @@ class NotificationService(BaseService):
             None
         """
         user_id = self.transaction.get_meta('user_id')
-        # domain_id = self.transaction.get_meta('domain_id')
-        print(f'user_id: {user_id}')
-        print(f'domain_id: {params["domain_id"]}')
-
-        self.notification_mgr.delete_all_notifications(params['notifications'],
-                                                       user_id, params['domain_id'])
+        self.notification_mgr.delete_all_notifications(params['notifications'], user_id, params['domain_id'])
 
     @transaction(append_meta={'authorization.scope': 'USER'})
     @check_required(['notification_id', 'domain_id'])
