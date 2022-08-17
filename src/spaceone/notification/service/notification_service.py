@@ -225,8 +225,11 @@ class NotificationService(BaseService):
         Returns:
             None
         """
-
-        notification_vos = self.notification_mgr.filter_notifications(**params)
+        filter_params = {
+            'notification_id': params['notifications'],
+            'domain_id': params['domain_id']
+        }
+        notification_vos = self.notification_mgr.filter_notifications(**filter_params)
         self.notification_mgr.delete_notification_by_vos(notification_vos)
 
     @transaction(append_meta={'authorization.scope': 'USER'})
