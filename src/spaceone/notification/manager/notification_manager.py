@@ -36,21 +36,6 @@ class NotificationManager(BaseManager):
         self.transaction.add_rollback(_rollback, notification_vos)
         notification_vos.update({'is_read': True})
 
-    def delete_all_notifications(self, notifications, user_id, domain_id):
-        query = {
-            'filter': [
-                {'k': 'notification_id', 'v': notifications, 'o': 'in'},
-                {'k': 'user_id', 'v': user_id, 'o': 'eq'},
-                {'k': 'domain_id', 'v': domain_id, 'o': 'eq'}
-            ]
-        }
-        notification_vos, total_count = self.list_notifications(query)
-        notification_vos.delete()
-
-    def delete_notification(self, notification_id, domain_id):
-        notification_vo: Notification = self.get_notification(notification_id, domain_id)
-        notification_vo.delete()
-
     def get_notification(self, notification_id, domain_id, only=None):
         return self.notification_model.get(notification_id=notification_id, domain_id=domain_id, only=only)
 
@@ -59,3 +44,10 @@ class NotificationManager(BaseManager):
 
     def stat_notifications(self, query):
         return self.notification_model.stat(**query)
+
+    def filter_notifications(self, **conditions):
+        return self.notification_model.filter(**conditions)
+
+    @staticmethod
+    def delete_notification_by_vos(notification_vos):
+        notification_vos.delete()

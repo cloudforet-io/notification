@@ -212,13 +212,13 @@ class NotificationService(BaseService):
         self.push_queue(protocol_vo.protocol_id, data, secret_data, notification_type, message, domain_id)
 
     @transaction(append_meta={'authorization.scope': 'USER'})
-    @check_required(['notification_id', 'domain_id'])
+    @check_required(['notifications', 'domain_id'])
     def delete(self, params):
-        """ Delete notification
+        """ Delete notifications
 
         Args:
             params (dict): {
-                'notification_id': 'str',
+                'notifications': 'list',
                 'domain_id': 'str'
             }
 
@@ -226,8 +226,8 @@ class NotificationService(BaseService):
             None
         """
 
-        self.notification_mgr.delete_notification(params['notification_id'],
-                                                  params['domain_id'])
+        notification_vos = self.notification_mgr.filter_notifications(**params)
+        self.notification_mgr.delete_notification_by_vos(notification_vos)
 
     @transaction(append_meta={'authorization.scope': 'USER'})
     @check_required(['notifications', 'domain_id'])
@@ -245,29 +245,6 @@ class NotificationService(BaseService):
         """
 
         self.notification_mgr.set_read_notification(params['notifications'], params['domain_id'])
-
-    @transaction(append_meta={'authorization.scope': 'USER'})
-    @check_required(['notifications', 'domain_id'])
-    def delete_all(self, params):
-        """  Delete all notifications of target users
-
-        Args:
-            params (dict): {
-                'notifications': 'list',
-                'user_id': 'str',
-                'domain_id': 'str'
-            }
-
-        Returns:
-            None
-        """
-        user_id = self.transaction.get_meta('user_id')
-        # domain_id = self.transaction.get_meta('domain_id')
-        print(f'user_id: {user_id}')
-        print(f'domain_id: {params["domain_id"]}')
-
-        self.notification_mgr.delete_all_notifications(params['notifications'],
-                                                       user_id, params['domain_id'])
 
     @transaction(append_meta={'authorization.scope': 'USER'})
     @check_required(['notification_id', 'domain_id'])
