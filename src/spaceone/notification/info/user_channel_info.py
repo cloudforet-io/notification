@@ -37,7 +37,7 @@ def UserChannelInfo(user_channel_vo: UserChannel, minimal=False):
             'is_scheduled': user_channel_vo.is_scheduled,
             'schedule': ScheduleInfo(user_channel_vo.schedule) if user_channel_vo.schedule else user_channel_vo.schedule,
             'created_at': utils.datetime_to_iso8601(user_channel_vo.created_at),
-            'tags': change_struct_type(utils.tags_to_dict(user_channel_vo.tags)),
+            'tags': change_struct_type(user_channel_vo.tags),
             'domain_id': user_channel_vo.domain_id
         })
 
