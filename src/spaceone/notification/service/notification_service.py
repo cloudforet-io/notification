@@ -268,10 +268,7 @@ class NotificationService(BaseService):
         return self.notification_mgr.get_notification(params['notification_id'], params['domain_id'],
                                                       params.get('only'))
 
-    @transaction(append_meta={
-        'authorization.scope': 'USER',
-        'mutation.append_parameter': {'user_self': 'user_id'}
-    })
+    @transaction(append_meta={'authorization.scope': 'USER'})
     @check_required(['domain_id'])
     @append_query_filter(['notification_id', 'topic', 'notification_type', 'notification_level', 'is_read',
                           'project_id', 'user_id', 'domain_id', 'user_self'])
@@ -289,8 +286,7 @@ class NotificationService(BaseService):
                 'project_id': 'str',
                 'user_id': 'str',
                 'domain_id': 'str',
-                'query': 'dict (spaceone.api.core.v1.Query)',
-                'user_self': 'str', // from meta
+                'query': 'dict (spaceone.api.core.v1.Query)'
             }
 
         Returns:
@@ -301,10 +297,7 @@ class NotificationService(BaseService):
         query = params.get('query', {})
         return self.notification_mgr.list_notifications(query)
 
-    @transaction(append_meta={
-        'authorization.scope': 'USER',
-        'mutation.append_parameter': {'user_self': 'user_id'}
-    })
+    @transaction(append_meta={'authorization.scope': 'USER'})
     @check_required(['query', 'domain_id'])
     @append_query_filter(['domain_id', 'user_self'])
     @append_keyword_filter(['notification_id', 'topic'])
@@ -313,8 +306,7 @@ class NotificationService(BaseService):
         Args:
             params (dict): {
                 'domain_id': 'str',
-                'query': 'dict (spaceone.api.core.v1.StatisticsQuery)',
-                'user_self': 'str', // from meta
+                'query': 'dict (spaceone.api.core.v1.StatisticsQuery)'
             }
 
         Returns:

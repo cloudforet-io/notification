@@ -256,10 +256,7 @@ class UserChannelService(BaseService):
 
         return self.user_channel_mgr.get_user_channel(params['user_channel_id'], params['domain_id'], params.get('only'))
 
-    @transaction(append_meta={
-        'authorization.scope': 'USER',
-        'mutation.append_parameter': {'user_self': 'user_id'}
-    })
+    @transaction(append_meta={'authorization.scope': 'USER'})
     @check_required(['domain_id'])
     @append_query_filter(['user_channel_id', 'name', 'state', 'secret_id', 'protocol_id', 'user_id', 'domain_id',
                           'user_self'])
@@ -276,8 +273,7 @@ class UserChannelService(BaseService):
                 'protocol_id': 'str',
                 'user_id': 'str',
                 'domain_id': 'str',
-                'query': 'dict (spaceone.api.core.v1.Query)',
-                'user_self': 'str', // from meta
+                'query': 'dict (spaceone.api.core.v1.Query)'
             }
 
         Returns:
@@ -288,10 +284,7 @@ class UserChannelService(BaseService):
         query = params.get('query', {})
         return self.user_channel_mgr.list_user_channels(query)
 
-    @transaction(append_meta={
-        'authorization.scope': 'USER',
-        'mutation.append_parameter': {'user_self': 'user_id'}
-    })
+    @transaction(append_meta={'authorization.scope': 'USER'})
     @check_required(['query', 'domain_id'])
     @append_query_filter(['domain_id', 'user_self'])
     @append_keyword_filter(['user_channel_id', 'name'])
@@ -300,8 +293,7 @@ class UserChannelService(BaseService):
         Args:
             params (dict): {
                 'domain_id': 'str',
-                'query': 'dict (spaceone.api.core.v1.StatisticsQuery)',
-                'user_self': 'str', // from meta
+                'query': 'dict (spaceone.api.core.v1.StatisticsQuery)'
             }
 
         Returns:

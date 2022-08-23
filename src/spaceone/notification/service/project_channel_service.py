@@ -270,10 +270,7 @@ class ProjectChannelService(BaseService):
                                                             params['domain_id'],
                                                             params.get('only'))
 
-    @transaction(append_meta={
-        'authorization.scope': 'PROJECT',
-        'mutation.append_parameter': {'user_projects': 'authorization.projects'}
-    })
+    @transaction(append_meta={'authorization.scope': 'PROJECT'})
     @check_required(['domain_id'])
     @append_query_filter(['project_channel_id', 'name', 'state', 'secret_id', 'is_subscribe', 'is_scheduled',
                           'notification_level', 'protocol_id', 'project_id', 'domain_id', 'user_projects'])
@@ -304,10 +301,7 @@ class ProjectChannelService(BaseService):
         query = params.get('query', {})
         return self.project_channel_mgr.list_project_channels(query)
 
-    @transaction(append_meta={
-        'authorization.scope': 'PROJECT',
-        'mutation.append_parameter': {'user_projects': 'authorization.projects'}
-    })
+    @transaction(append_meta={'authorization.scope': 'PROJECT'})
     @check_required(['query', 'domain_id'])
     @append_query_filter(['domain_id', 'user_projects'])
     @append_keyword_filter(['project_channel_id', 'name'])
