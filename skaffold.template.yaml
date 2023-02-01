@@ -1,0 +1,17 @@
+apiVersion: skaffold/v4beta1
+kind: Config
+metadata:
+  name: notification
+build:
+  platforms: ["linux/amd64"]
+  artifacts:
+    - image: ${IMAGE_REPOSITORY}/notification
+      docker:
+        dockerfile: Dockerfile
+deploy:
+  helm:
+    releases:
+    - name: notification
+      chartPath: deploy/helm
+      valuesFiles:
+      - ${VALUES_LOCATION}/notification.yaml
