@@ -5,7 +5,7 @@ LOG = {
                 'Protocol.verify': [
                     'secret_data'
                 ],
-                'Protocol.dispatch': [
+                'Notification.dispatch': [
                     'secret_data'
                 ]
             }
