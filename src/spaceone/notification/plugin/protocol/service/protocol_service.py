@@ -21,9 +21,7 @@ class ProtocolService(BaseService):
             }
 
         Returns:
-            PluginResponse: {
-                'metadata': 'dict'
-            }
+            PluginResponse:
         """
 
         func = self.get_plugin_method('init')

@@ -1,8 +1,6 @@
 from spaceone.core.pygrpc import BaseAPI
 from spaceone.api.notification.plugin import notification_pb2, notification_pb2_grpc
-from spaceone.notification.plugin.protocol.error.response import *
 from spaceone.notification.plugin.protocol.service.notification_service import NotificationService
-
 
 
 class Notification(BaseAPI, notification_pb2_grpc.NotificationServicer):

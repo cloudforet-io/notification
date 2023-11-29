@@ -18,7 +18,7 @@ def protocol_init(params: dict) -> dict:
             'metadata': 'dict'
         }
     """
-    return {'metadata': {}}
+    pass
 
 
 @app.route('Protocol.verify')
@@ -39,23 +39,19 @@ def protocol_verify(params: dict) -> None:
 
 
 @app.route('Notification.dispatch')
-def notification_dispatch(params: dict) -> dict:
+def notification_dispatch(params: dict) -> None:
     """ dispatch notification
 
     Args:
         params (NotificationDispatchRequest): {
-            'options': 'dict',      # Required
-            'secret_data': 'dict',  # Required
-            'channel_data': 'dict', # Required
-            'message': 'dict',
-            'notification_type': 'str',
+            'options': 'dict',              # Required
+            'secret_data': 'dict',          # Required
+            'channel_data': 'dict',         # Required
+            'message': 'dict',              # Required
+            'notification_type': 'str',     # Required
         }
 
     Returns:
-        Generator[ResourceResponse, None, None]
-        {
-            'notificiation_type': 'INFO | ERROR | SUCCESS | WARNING',
-            'message': dict
-        }
+        None
     """
     pass

@@ -6,7 +6,8 @@ LOG = {
                     'secret_data'
                 ],
                 'Notification.dispatch': [
-                    'secret_data'
+                    'secret_data',
+                    'channel_data'
                 ]
             }
         }
