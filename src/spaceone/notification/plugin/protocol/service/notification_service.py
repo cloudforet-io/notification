@@ -25,4 +25,4 @@ class NotificationService(BaseService):
         """
 
         func = self.get_plugin_method('dispatch')
-        func(params.dict())
+        r = func(params.dict())

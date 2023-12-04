@@ -10,5 +10,5 @@ class Notification(BaseAPI, notification_pb2_grpc.NotificationServicer):
     def dispatch(self, request, context):
         params, metadata = self.parse_request(request, context)
         notification_svc = NotificationService(metadata)
-        for response in notification_svc.dispatch(params):
-            yield self.dict_to_message(response)
+        notification_svc.dispatch(params)
+        return self.empty()
