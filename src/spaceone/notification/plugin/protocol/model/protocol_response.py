@@ -7,7 +7,12 @@ DataType = Literal['PLAIN_TEXT', 'SECRET']
 
 
 class PluginDataSchema(BaseModel):
-    schema_name: dict = Field(alias='schema')
+    json_schema: dict = Field(alias="schema")
+
+    def dict(self, *args, **kwargs):
+        data = super().dict(*args, **kwargs)
+        data['schema'] = data.pop('json_schema')
+        return data
 
 
 class PluginMetadata(BaseModel):
