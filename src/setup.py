@@ -27,13 +27,9 @@ setup(
     license='Apache License 2.0',
     packages=find_packages(),
     install_requires=[
-        'spaceone-core',
         'spaceone-api',
-        'mongoengine',
         'langcodes',
-        'redis',
-        'fakeredis',
-        'mongomock'
+        'fakeredis'
     ],
     zip_safe=False,
 )
