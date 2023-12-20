@@ -2,5 +2,3 @@ from spaceone.notification.service.notification_service import NotificationServi
 from spaceone.notification.service.protocol_service import ProtocolService
 from spaceone.notification.service.project_channel_service import ProjectChannelService
 from spaceone.notification.service.user_channel_service import UserChannelService
-from spaceone.notification.service.quota_service import QuotaService
-from spaceone.notification.service.notification_usage_service import NotificationUsageService
