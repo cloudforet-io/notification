@@ -1,9 +1,13 @@
 import logging
 import copy
+from typing import Tuple
+
 from spaceone.core import cache
 from spaceone.core import utils
 from spaceone.core import config
 from spaceone.core.service import *
+
+from spaceone.notification.conf.protocol_conf import *
 from spaceone.notification.error import *
 from spaceone.notification.manager import RepositoryManager
 from spaceone.notification.manager import ProtocolManager
@@ -12,7 +16,6 @@ from spaceone.notification.manager import ProjectChannelManager
 from spaceone.notification.manager import UserChannelManager
 from spaceone.notification.manager import SecretManager
 from spaceone.notification.model import Protocol
-from spaceone.notification.conf.protocol_conf import *
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -34,11 +37,10 @@ class ProtocolService(BaseService):
         """Create Protocol
         Args:
             params (dict): {
-                'name': 'str',
-                'plugin_info': 'dict',
+                'name': 'str',          # required
+                'plugin_info': 'dict',  # required
                 'tags': 'dict',
-                'domain_id': 'str',
-                'upgrade_mode': 'str'
+                'domain_id': 'str',     # injected from auth
             }
 
         Returns:
@@ -46,7 +48,7 @@ class ProtocolService(BaseService):
         """
         return self._create(params)
 
-    def _create(self, params):
+    def _create(self, params: dict) -> Protocol:
         domain_id = params["domain_id"]
         plugin_info = params["plugin_info"]
 
@@ -99,15 +101,15 @@ class ProtocolService(BaseService):
 
     @transaction(permission="notification:Protocol.write", role_types=["DOMAIN_ADMIN"])
     @check_required(["protocol_id", "domain_id"])
-    def update(self, params):
+    def update(self, params: dict):
         """Update protocol
 
         Args:
             params (dict): {
-                'protocol_id': 'str',
+                'protocol_id': 'str',   # required
                 'name': 'str',
                 'tags': 'dict',
-                'domain_id': 'str'
+                'domain_id': 'str'      # injected from auth
             }
 
         Returns:
@@ -126,7 +128,7 @@ class ProtocolService(BaseService):
 
     @transaction(permission="notification:Protocol.write", role_types=["DOMAIN_ADMIN"])
     @check_required(["protocol_id", "domain_id"])
-    def update_plugin(self, params):
+    def update_plugin(self, params: dict):
         """Update protocol plugin
 
         Args:
@@ -160,7 +162,7 @@ class ProtocolService(BaseService):
                 plugin_id = plugin_info["plugin_id"]
 
                 repo_mgr = self.locator.get_manager("RepositoryManager")
-                repo_mgr.check_plugin_version(plugin_id, version, domain_id)
+                repo_mgr.check_plugin_version(plugin_id, version)
 
                 plugin_info["version"] = version
                 plugin_info["metadata"] = self._init_plugin(plugin_info, domain_id)
@@ -180,13 +182,13 @@ class ProtocolService(BaseService):
 
     @transaction(permission="notification:Protocol.write", role_types=["DOMAIN_ADMIN"])
     @check_required(["protocol_id", "domain_id"])
-    def delete(self, params):
+    def delete(self, params: dict):
         """Delete protocol
 
         Args:
             params (dict): {
-                'protocol_id': 'str',
-                'domain_id': 'str'
+                'protocol_id': 'str',   # required
+                'domain_id': 'str'      # injected from auth
             }
 
         Returns:
@@ -200,28 +202,29 @@ class ProtocolService(BaseService):
 
         if secret_id := protocol_vo.plugin_info.secret_id:
             secret_mgr: SecretManager = self.locator.get_manager("SecretManager")
-            secret_mgr.delete_secret({"secret_id": secret_id, "domain_id": domain_id})
+            secret_mgr.delete_secret({"secret_id": secret_id})
 
         return self.protocol_mgr.delete_protocol_by_vo(protocol_vo)
 
     @transaction(permission="notification:Protocol.write", role_types=["DOMAIN_ADMIN"])
     @check_required(["protocol_id", "domain_id"])
-    def enable(self, params):
+    def enable(self, params: dict):
         """Enable protocol
 
         Args:
             params (dict): {
-                'protocol_id': 'str',
-                'domain_id': 'str'
+                'protocol_id': 'str',   # required
+                'domain_id': 'str'      # injected from auth
             }
 
         Returns:
             protocol_vo (object)
         """
-
-        return self.protocol_mgr.enable_protocol(
+        protocol_vo = self.protocol_mgr.get_protocol(
             params["protocol_id"], params["domain_id"]
         )
+        protocol_vo = self.protocol_mgr.enable_protocol(protocol_vo)
+        return protocol_vo
 
     @transaction(permission="notification:Protocol.write", role_types=["DOMAIN_ADMIN"])
     @check_required(["protocol_id", "domain_id"])
@@ -230,17 +233,19 @@ class ProtocolService(BaseService):
 
         Args:
             params (dict): {
-                'protocol_id': 'str',
-                'domain_id': 'str'
+                'protocol_id': 'str',   # required
+                'domain_id': 'str'      # injected from auth
             }
 
         Returns:
             protocol_vo (object)
         """
 
-        return self.protocol_mgr.disable_protocol(
+        protocol_vo = self.protocol_mgr.get_protocol(
             params["protocol_id"], params["domain_id"]
         )
+        protocol_vo = self.protocol_mgr.disable_protocol(protocol_vo)
+        return protocol_vo
 
     @transaction(
         permission="notification:Protocol.read",
@@ -252,8 +257,8 @@ class ProtocolService(BaseService):
 
         Args:
             params (dict): {
-                'domain_id': 'str',
-                'only': 'list'
+                'protocol_id': 'str',   # required
+                'domain_id': 'str',     # injected from auth
             }
 
         Returns:
@@ -266,9 +271,7 @@ class ProtocolService(BaseService):
         self._create_default_protocol(domain_id)
         self._initialize_protocols(domain_id)
 
-        return self.protocol_mgr.get_protocol(
-            protocol_id, domain_id, params.get("only")
-        )
+        return self.protocol_mgr.get_protocol(protocol_id, domain_id)
 
     @transaction(
         permission="notification:Protocol.read",
@@ -277,17 +280,17 @@ class ProtocolService(BaseService):
     @check_required(["domain_id"])
     @append_query_filter(["protocol_id", "name", "state", "protocol_type", "domain_id"])
     @append_keyword_filter(["protocol_id", "name"])
-    def list(self, params):
+    def list(self, params: dict):
         """List protocol
 
         Args:
             params (dict): {
+                'query': 'dict (spaceone.api.core.v1.Query)'
                 'protocol_id': 'str',
                 'name': 'str',
                 'state': 'str',
                 'protocol_type',
-                'domain_id': 'str',
-                'query': 'dict (spaceone.api.core.v1.Query)'
+                'domain_id': 'str',                         # injected from auth
             }
 
         Returns:
@@ -333,11 +336,11 @@ class ProtocolService(BaseService):
         plugin_info = repo_mgr.get_plugin(plugin_id, domain_id)
 
         if version := plugin_info.get("version"):
-            repo_mgr.check_plugin_version(plugin_id, version, domain_id)
+            repo_mgr.check_plugin_version(plugin_id, version)
 
         return plugin_info
 
-    def _init_plugin(self, plugin_info, domain_id):
+    def _init_plugin(self, plugin_info: dict, domain_id: str) -> Tuple[dict, dict]:
         options = plugin_info.get("options", {})
 
         plugin_mgr: PluginManager = self.locator.get_manager("PluginManager")
@@ -424,7 +427,10 @@ class ProtocolService(BaseService):
         if "plugin_id" not in plugin_info_params:
             raise ERROR_REQUIRED_PARAMETER(key="plugin_info.plugin_id")
 
-        if "secret_data" in plugin_info_params and "schema" not in plugin_info_params:
+        if (
+            "secret_data" in plugin_info_params
+            and "schema_id" not in plugin_info_params
+        ):
             raise ERROR_REQUIRED_PARAMETER(key="plugin_info.schema_id")
 
         if (

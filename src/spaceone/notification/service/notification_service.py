@@ -11,7 +11,6 @@ from spaceone.notification.manager import UserChannelManager
 from spaceone.notification.manager import ProtocolManager
 from spaceone.notification.manager import SecretManager
 from spaceone.notification.manager import PluginManager
-from spaceone.notification.manager import QuotaManager
 from spaceone.notification.manager import NotificationUsageManager
 from spaceone.notification.conf.global_conf import *
 
@@ -78,7 +77,7 @@ class NotificationService(BaseService):
         _LOGGER.debug(f'[Dispatch Domain] Domain ID: {params["resource_id"]}')
 
         identity_mgr: IdentityManager = self.locator.get_manager("IdentityManager")
-        users = identity_mgr.get_all_users_in_domain(params["resource_id"])
+        users = identity_mgr.get_all_users_in_domain()
 
         for user in users:
             user_channel_params = {
@@ -571,34 +570,12 @@ class NotificationService(BaseService):
         )
 
         try:
-            self.check_quota(protocol_vo, usage_month, usage_date)
             plugin_mgr.dispatch_notification(
                 secret_data, channel_data, notification_type, message, options
             )
             self.increment_usage(noti_usage_vo)
         except Exception as e:
             self.increment_fail_count(noti_usage_vo)
-
-    def check_quota(self, protocol_vo, usage_month, usage_date, count=1):
-        quota_mgr: QuotaManager = self.locator.get_manager("QuotaManager")
-
-        query = {"filter": [{"k": "protocol", "v": protocol_vo, "o": "eq"}]}
-        quota_results, quota_total_count = quota_mgr.list_quotas(query)
-
-        if quota_total_count:
-            limit = quota_results[0].limit
-            self._check_quota_limit(
-                protocol_vo.protocol_id, limit, usage_month, usage_date, count
-            )
-        else:
-            # Check Default Quota
-            plugin_id = protocol_vo.plugin_info.plugin_id
-
-            if plugin_id in DEFAULT_QUOTA:
-                limit = DEFAULT_QUOTA[plugin_id]
-                self._check_quota_limit(
-                    protocol_vo.protocol_id, limit, usage_month, usage_date, count
-                )
 
     def increment_usage(self, noti_usage_vo, count=1):
         noti_usage_mgr: NotificationUsageManager = self.locator.get_manager(
