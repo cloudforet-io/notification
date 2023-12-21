@@ -14,15 +14,8 @@ class RepositoryManager(BaseManager):
             "SpaceConnector", service="repository"
         )
 
-    def get_plugin(self, plugin_id, domain_id):
-        return self.repo_connector.dispatch(
-            "Plugin.get", {"plugin_id": plugin_id, "domain_id": domain_id}
-        )
-
-    def get_schema(self, schema_name, domain_id):
-        return self.repo_connector.dispatch(
-            "Schema.get", {"name": schema_name, "domain_id": domain_id}
-        )
+    def get_plugin(self, plugin_id: str):
+        return self.repo_connector.dispatch("Plugin.get", {"plugin_id": plugin_id})
 
     def get_plugin_versions(self, plugin_id):
         return self.repo_connector.dispatch(
