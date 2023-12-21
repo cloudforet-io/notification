@@ -79,17 +79,16 @@ class ProtocolService(BaseService):
             secret_mgr: SecretManager = self.locator.get_manager("SecretManager")
             secret_params = {
                 "name": utils.generate_id("secret-noti-proto", 4),
-                "secret_type": "CREDENTIALS",
                 "data": plugin_info["secret_data"],
-                "schema": plugin_info["schema"],
-                "domain_id": domain_id,
+                "resource_group": "WORKSPACE",
+                "schema_id": plugin_info["schema_id"],
             }
 
             protocol_secret = secret_mgr.create_secret(secret_params)
             request_plugin.update(
                 {
                     "secret_id": protocol_secret["secret_id"],
-                    "schema": plugin_info["schema"],
+                    "schema_id": plugin_info["schema_id"],
                 }
             )
 
@@ -426,7 +425,7 @@ class ProtocolService(BaseService):
             raise ERROR_REQUIRED_PARAMETER(key="plugin_info.plugin_id")
 
         if "secret_data" in plugin_info_params and "schema" not in plugin_info_params:
-            raise ERROR_REQUIRED_PARAMETER(key="plugin_info.schema")
+            raise ERROR_REQUIRED_PARAMETER(key="plugin_info.schema_id")
 
         if (
             "upgrade_mode" in plugin_info_params

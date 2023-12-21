@@ -25,7 +25,7 @@ OLD_NOTIFICATION_DAYS = 60
 @event_handler
 class NotificationService(BaseService):
     resource = "Notification"
-    
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.notification_mgr: NotificationManager = self.locator.get_manager(
@@ -141,9 +141,9 @@ class NotificationService(BaseService):
                 )
 
                 if (
-                        dispatch_subscribe
-                        and dispatch_schedule
-                        and dispatch_notification_level
+                    dispatch_subscribe
+                    and dispatch_schedule
+                    and dispatch_notification_level
                 ):
                     _LOGGER.info(
                         f"[Notification] Dispatch Notification to project: {resource_id}"
@@ -417,13 +417,13 @@ class NotificationService(BaseService):
         return self.notification_mgr.stat_notifications(query)
 
     def push_queue(
-            self,
-            protocol_id,
-            channel_data,
-            secret_data,
-            notification_type,
-            message,
-            domain_id,
+        self,
+        protocol_id,
+        channel_data,
+        secret_data,
+        notification_type,
+        message,
+        domain_id,
     ):
         task = {
             "name": "dispatch_notification",
@@ -450,7 +450,7 @@ class NotificationService(BaseService):
         _LOGGER.debug(f"[push_queue] task: {task}")
         queue.put("notification_q", utils.dump_json(task))
 
-    @transaction(append_meta={"authorization.scope": "DOMAIN"})
+    @transaction()
     def delete_old_notifications(self, params):
         """Delete old notifications
 
@@ -505,13 +505,13 @@ class NotificationService(BaseService):
         return secret_data
 
     def dispatch_notification(
-            self,
-            protocol_id,
-            channel_data,
-            secret_data,
-            notification_type,
-            message,
-            domain_id,
+        self,
+        protocol_id,
+        channel_data,
+        secret_data,
+        notification_type,
+        message,
+        domain_id,
     ):
         protocol_mgr: ProtocolManager = self.locator.get_manager("ProtocolManager")
         plugin_mgr: PluginManager = self.locator.get_manager("PluginManager")
@@ -556,14 +556,14 @@ class NotificationService(BaseService):
             _LOGGER.info("[Notification] Protocol is disabled. skip notification")
 
     def _dispatch_notification(
-            self,
-            protocol_vo,
-            secret_data,
-            channel_data,
-            notification_type,
-            message,
-            options,
-            plugin_mgr,
+        self,
+        protocol_vo,
+        secret_data,
+        channel_data,
+        notification_type,
+        message,
+        options,
+        plugin_mgr,
     ):
         month, date = self.get_month_date()
         noti_usage_vo, usage_month, usage_date = self.get_notification_usage(
@@ -685,7 +685,7 @@ class NotificationService(BaseService):
 
     @staticmethod
     def check_notification_level_for_dispatch(
-            notification_level, prj_channel_notification_level
+        notification_level, prj_channel_notification_level
     ):
         if notification_level == "ALL":
             return True
