@@ -53,7 +53,7 @@ class ProtocolService(BaseService):
         plugin_info = params["plugin_info"]
 
         self._check_plugin_info(plugin_info)
-        _plugin = self._get_plugin(plugin_info, domain_id)
+        _plugin = self._get_plugin(plugin_info)
         plugin_capability = _plugin.get("capability", {})
 
         if "supported_schema" in plugin_capability:
@@ -329,11 +329,11 @@ class ProtocolService(BaseService):
         query = params.get("query", {})
         return self.protocol_mgr.stat_protocols(query)
 
-    def _get_plugin(self, plugin_info, domain_id):
+    def _get_plugin(self, plugin_info):
         plugin_id = plugin_info["plugin_id"]
 
         repo_mgr: RepositoryManager = self.locator.get_manager("RepositoryManager")
-        plugin_info = repo_mgr.get_plugin(plugin_id, domain_id)
+        plugin_info = repo_mgr.get_plugin(plugin_id)
 
         if version := plugin_info.get("version"):
             repo_mgr.check_plugin_version(plugin_id, version)
