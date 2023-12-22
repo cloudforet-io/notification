@@ -83,14 +83,13 @@ class ProtocolService(BaseService):
                 "name": utils.generate_id("secret-noti-proto", 4),
                 "data": plugin_info["secret_data"],
                 "resource_group": "WORKSPACE",
-                "schema_id": plugin_info["schema_id"],
+                "schema_id": plugin_info["schema"],  # todo change to schema_id
             }
-
             protocol_secret = secret_mgr.create_secret(secret_params)
             request_plugin.update(
                 {
                     "secret_id": protocol_secret["secret_id"],
-                    "schema_id": plugin_info["schema_id"],
+                    "schema_id": plugin_info["schema"],  # todo change to schema_id
                 }
             )
 

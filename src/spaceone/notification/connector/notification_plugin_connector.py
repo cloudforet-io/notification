@@ -3,6 +3,7 @@ import logging
 from google.protobuf.json_format import MessageToDict
 
 from spaceone.core.connector import BaseConnector
+from spaceone.core.connector.space_connector import SpaceConnector
 from spaceone.core import pygrpc
 from spaceone.core.utils import parse_endpoint
 
@@ -30,8 +31,8 @@ class NotificationPluginConnector(BaseConnector):
         response = self.client.Protocol.init(
             {
                 "options": options,
-            },
-            metadata=self.transaction.meta,
+            }
+            # metadata=self.transaction.meta,
         )
 
         return self._change_message(response)
@@ -39,7 +40,7 @@ class NotificationPluginConnector(BaseConnector):
     def verify(self, options, secret_data):
         params = {"options": options, "secret_data": secret_data}
 
-        self.client.Protocol.verify(params, metadata=self.transaction.meta)
+        self.client.Protocol.verify(params)  # todo: add metadata
 
     def dispatch_notification(
         self, secret_data, channel_data, notification_type, message, options={}
