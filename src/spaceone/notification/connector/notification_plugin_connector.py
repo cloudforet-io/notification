@@ -14,7 +14,7 @@ _LOGGER = logging.getLogger(__name__)
 class NotificationPluginConnector(BaseConnector):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.client = None
+        self.noti_plugin_connector = None
 
     def initialize(self, endpoint):
         static_endpoint = self.config.get("endpoint")
@@ -22,28 +22,23 @@ class NotificationPluginConnector(BaseConnector):
         if static_endpoint:
             endpoint = static_endpoint
 
-        e = parse_endpoint(endpoint)
-        self.client = pygrpc.client(
-            endpoint=f'{e.get("hostname")}:{e.get("port")}', version="plugin"
+        self.noti_plugin_connector: SpaceConnector = self.locator.get_connector(
+            "SpaceConnector", endpoint=endpoint
         )
 
     def init(self, options):
-        response = self.client.Protocol.init(
-            {
-                "options": options,
-            }
-            # metadata=self.transaction.meta,
+        response = self.noti_plugin_connector.dispatch(
+            "Protocol.init", {"options": options}
         )
-
         return self._change_message(response)
 
     def verify(self, options, secret_data):
         params = {"options": options, "secret_data": secret_data}
 
-        self.client.Protocol.verify(params)  # todo: add metadata
+        self.noti_plugin_connector.dispatch("Protocol.verify", params)
 
     def dispatch_notification(
-        self, secret_data, channel_data, notification_type, message, options={}
+        self, secret_data: dict, channel_data, notification_type, message, options={}
     ):
         params = {
             "secret_data": secret_data,
@@ -53,9 +48,7 @@ class NotificationPluginConnector(BaseConnector):
             "options": options,
         }
 
-        response = self.client.Notification.dispatch(
-            params, metadata=self.transaction.meta
-        )
+        response = self.noti_plugin_connector.dispatch("Notification.dispatch", params)
         return self._change_message(response)
 
     @staticmethod

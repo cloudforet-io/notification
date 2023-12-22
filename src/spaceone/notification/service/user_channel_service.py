@@ -216,9 +216,7 @@ class UserChannelService(BaseService):
         )
 
         if secret_id := user_channel_vo.secret_id:
-            self.secret_mgr.delete_secret(
-                {"secret_id": secret_id, "domain_id": domain_id}
-            )
+            self.secret_mgr.delete_secret(secret_id)
 
         self.user_channel_mgr.delete_user_channel_by_vo(user_channel_vo)
 

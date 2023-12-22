@@ -27,12 +27,6 @@ class ProjectChannelManager(BaseManager):
 
         return project_channel_vo
 
-    def update_project_channel(self, params):
-        project_channel_vo = self.get_project_channel(
-            params["project_channel_id"], params["domain_id"]
-        )
-        return self.update_project_channel_by_vo(params, project_channel_vo)
-
     def update_project_channel_by_vo(self, params, project_channel_vo):
         def _rollback(old_data):
             _LOGGER.info(
@@ -50,45 +44,26 @@ class ProjectChannelManager(BaseManager):
         )
         self.delete_project_channel_by_vo(project_channel_vo)
 
-    def enable_project_channel(self, project_channel_id, domain_id):
-        def _rollback(old_data):
-            _LOGGER.info(
-                f"[enable_project_channel._rollback] "
-                f'Revert Data : {old_data["name"]} ({old_data["project_channel_id"]})'
-            )
-            project_channel_vo.update(old_data)
+    def enable_project_channel(
+        self, project_channel_vo: ProjectChannel
+    ) -> ProjectChannel:
+        self.update_project_channel_by_vo(project_channel_vo, {"state": "ENABLED"})
+        return project_channel_vo
 
-        project_channel_vo: ProjectChannel = self.get_project_channel(
-            project_channel_id, domain_id
-        )
-
-        if project_channel_vo.state != "ENABLED":
-            self.transaction.add_rollback(_rollback, project_channel_vo.to_dict())
-            project_channel_vo.update({"state": "ENABLED"})
+    def disable_project_channel(
+        self, project_channel_vo: ProjectChannel
+    ) -> ProjectChannel:
+        self.update_project_channel_by_vo(project_channel_vo, {"state": "DISABLED"})
 
         return project_channel_vo
 
-    def disable_project_channel(self, project_channel_id, domain_id):
-        def _rollback(old_data):
-            _LOGGER.info(
-                f"[disable_project_channel._rollback] "
-                f'Revert Data : {old_data["name"]} ({old_data["project_channel_id"]})'
-            )
-            project_channel_vo.update(old_data)
-
-        project_channel_vo: ProjectChannel = self.get_project_channel(
-            project_channel_id, domain_id
-        )
-
-        if project_channel_vo.state != "DISABLED":
-            self.transaction.add_rollback(_rollback, project_channel_vo.to_dict())
-            project_channel_vo.update({"state": "DISABLED"})
-
-        return project_channel_vo
-
-    def get_project_channel(self, project_channel_id, domain_id, only=None):
+    def get_project_channel(
+        self, project_channel_id: str, workspace_id: str, domain_id: str
+    ):
         return self.project_channel_model.get(
-            project_channel_id=project_channel_id, domain_id=domain_id, only=only
+            project_channel_id=project_channel_id,
+            workspcae_id=workspace_id,
+            domain_id=domain_id,
         )
 
     def list_project_channels(self, query: dict) -> dict:

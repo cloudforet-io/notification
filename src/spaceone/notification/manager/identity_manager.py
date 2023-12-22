@@ -1,7 +1,8 @@
 import logging
 
-from spaceone.core.manager import BaseManager
+from spaceone.core import config
 from spaceone.core.connector.space_connector import SpaceConnector
+from spaceone.core.manager import BaseManager
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -23,15 +24,18 @@ class IdentityManager(BaseManager):
             "SpaceConnector", service="identity"
         )
 
-    def get_resource(self, resource_id, resource_type, domain_id):
+    def get_resource(self, resource_id: str, resource_type: str):
         get_method = _GET_RESOURCE_METHODS[resource_type]
         return self.identity_connector.dispatch(
             get_method["dispatch_method"],
-            {get_method["key"]: resource_id, "domain_id": domain_id},
+            {get_method["key"]: resource_id},
         )
 
     def get_domain_info(self, domain_id):
-        return self.identity_connector.dispatch("Domain.get", {"domain_id": domain_id})
+        token = config.get_global("TOKEN")
+        return self.identity_connector.dispatch(
+            "Domain.get", {"domain_id": domain_id}, token=token
+        )
 
     def get_all_users_in_domain(self):
         query = {

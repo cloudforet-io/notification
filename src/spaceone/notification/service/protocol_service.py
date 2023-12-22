@@ -201,7 +201,7 @@ class ProtocolService(BaseService):
 
         if secret_id := protocol_vo.plugin_info.secret_id:
             secret_mgr: SecretManager = self.locator.get_manager("SecretManager")
-            secret_mgr.delete_secret({"secret_id": secret_id})
+            secret_mgr.delete_secret(secret_id)
 
         return self.protocol_mgr.delete_protocol_by_vo(protocol_vo)
 

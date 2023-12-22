@@ -46,6 +46,7 @@ class NotificationService(BaseService):
                 'message': 'dict',
                 'notification_type': 'str' -> INFO(default) | ERROR | SUCCESS | WARNING,
                 'notification_level': 'str' -> ALL(default) | LV1 | LV2 | LV3 | LV4 | LV5,
+                'workspace_id': str                                                             # injected from auth
                 'domain_id': 'str'                                                              # injected from auth
             }
 
@@ -55,6 +56,7 @@ class NotificationService(BaseService):
         identity_mgr: IdentityManager = self.locator.get_manager("IdentityManager")
 
         domain_id = params["domain_id"]
+        workspace_id = params.get("workspace_id")
         resource_type = params["resource_type"]
         resource_id = params["resource_id"]
         message = params["message"]
@@ -62,7 +64,7 @@ class NotificationService(BaseService):
         domain_info = identity_mgr.get_domain_info(domain_id)
         message["domain_name"] = self.get_domain_name(domain_info)
 
-        identity_mgr.get_resource(resource_id, resource_type, domain_id)
+        identity_mgr.get_resource(resource_id, resource_type)
 
         if resource_type == "identity.Domain":
             self.dispatch_domain(params)
@@ -92,7 +94,7 @@ class NotificationService(BaseService):
 
             self.dispatch_user_channel(user_channel_params)
 
-    def dispatch_project_channel(self, params):
+    def dispatch_project_channel(self, params: dict):
         _LOGGER.debug(f'[Dispatch Project Channel] Project ID: {params["resource_id"]}')
         protocol_mgr: ProtocolManager = self.locator.get_manager("ProtocolManager")
         project_ch_mgr: ProjectChannelManager = self.locator.get_manager(
@@ -100,6 +102,7 @@ class NotificationService(BaseService):
         )
 
         domain_id = params["domain_id"]
+        workspace_id = params.get("workspace_id")
         topic = params["topic"]
         resource_id = params["resource_id"]
 
@@ -111,6 +114,7 @@ class NotificationService(BaseService):
             {
                 "filter": [
                     {"k": "project_id", "v": resource_id, "o": "eq"},
+                    {"k": "workspace_id", "v": workspace_id, "o": "eq"},
                     {"k": "domain_id", "v": domain_id, "o": "eq"},
                 ]
             }
@@ -693,7 +697,7 @@ class NotificationService(BaseService):
                 )
 
     @staticmethod
-    def get_domain_name(domain_info):
+    def get_domain_name(domain_info: dict):
         _tags = domain_info.get("tags", {})
         if description := _tags.get("description"):
             return description

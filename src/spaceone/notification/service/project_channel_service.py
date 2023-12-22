@@ -32,14 +32,16 @@ class ProjectChannelService(BaseService):
         permission="notification:ProjectChannel.write",
         role_types=["WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
     )
-    @check_required(["protocol_id", "name", "data", "project_id", "domain_id"])
+    @check_required(
+        ["protocol_id", "name", "data", "project_id", "workspace_id", "domain_id"]
+    )
     def create(self, params):
         """Create Project Channel
         Args:
             params (dict): {
-                'protocol_id': 'str',
-                'name': 'str',
-                'data': 'dict',
+                'protocol_id': 'str',           # required
+                'name': 'str',                  # required
+                'data': 'dict',                 # required
                 'is_subscribe': 'bool',
                 'subscriptions': 'list',
                 'notification_level': 'str',
@@ -47,7 +49,8 @@ class ProjectChannelService(BaseService):
                 'schedule': 'dict',
                 'project_id': 'str',
                 'tags': 'dict',
-                'domain_id': 'str'
+                'workspace_id': 'str'           # injected from auth
+                'domain_id': 'str'              # injected from auth
             }
 
         Returns:
@@ -56,6 +59,7 @@ class ProjectChannelService(BaseService):
 
         protocol_id = params["protocol_id"]
         domain_id = params["domain_id"]
+        workspace_id = params["workspace_id"]
         data = params["data"]
         project_id = params["project_id"]
         is_subscribe = params.get("is_subscribe", False)
@@ -69,25 +73,25 @@ class ProjectChannelService(BaseService):
         else:
             params["schedule"] = None
 
-        self.identity_mgr.get_resource(project_id, "identity.Project", domain_id)
+        self.identity_mgr.get_resource(project_id, "identity.Project")
         protocol_vo = self.protocol_mgr.get_protocol(protocol_id, domain_id)
 
         if protocol_vo.state == "DISABLED":
             raise ERROR_PROTOCOL_DISABLED()
 
         metadata = protocol_vo.plugin_info.metadata
-        schema = metadata.get("data", {}).get("schema")
+        schema_id = metadata.get("data", {}).get("schema")  # TODO: change to schema_id
 
-        if schema:
-            validate_json_schema(data, schema)
+        if schema_id:
+            validate_json_schema(data, schema_id)
 
         if metadata["data_type"] == "SECRET":
             new_secret_parameters = {
                 "name": utils.generate_id("project-ch", 4),
-                "secret_type": "CREDENTIALS",
                 "data": data,
+                "resource_group": "WORKSPACE",
                 "project_id": project_id,
-                "domain_id": domain_id,
+                "workspace_id": workspace_id,
             }
 
             project_channel_secret = self.secret_mgr.create_secret(
@@ -105,8 +109,8 @@ class ProjectChannelService(BaseService):
         permission="notification:ProjectChannel.write",
         role_types=["WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
     )
-    @check_required(["project_channel_id", "domain_id"])
-    def update(self, params):
+    @check_required(["project_channel_id", "workspace_id", "domain_id"])
+    def update(self, params: dict):
         """Update project channel
 
         Args:
@@ -116,6 +120,7 @@ class ProjectChannelService(BaseService):
                 'data': 'dict',
                 'notification_level': 'str',
                 'tags': 'dict',
+                'workspace_id': 'str',
                 'domain_id': 'str'
             }
 
@@ -123,10 +128,13 @@ class ProjectChannelService(BaseService):
             project_channel_vo (object)
         """
         project_channel_id = params["project_channel_id"]
+        workspace_id = params["workspace_id"]
         domain_id = params["domain_id"]
 
         project_channel_vo: ProjectChannel = (
-            self.project_channel_mgr.get_project_channel(project_channel_id, domain_id)
+            self.project_channel_mgr.get_project_channel(
+                project_channel_id, workspace_id, domain_id
+            )
         )
 
         if "data" in params:
@@ -134,10 +142,12 @@ class ProjectChannelService(BaseService):
                 project_channel_vo.protocol_id, domain_id
             )
             metadata = protocol_vo.plugin_info.metadata
-            schema = metadata.get("data", {}).get("schema")
+            schema_id = metadata.get("data", {}).get(
+                "schema"
+            )  # TODO: change to schema_id
 
-            if schema:
-                validate_json_schema(params["data"], schema)
+            if schema_id:
+                validate_json_schema(params["data"], schema_id)
 
             if project_channel_vo.secret_id:
                 secret_params = {
@@ -157,8 +167,8 @@ class ProjectChannelService(BaseService):
         permission="notification:ProjectChannel.write",
         role_types=["WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
     )
-    @check_required(["project_channel_id", "domain_id"])
-    def set_schedule(self, params):
+    @check_required(["project_channel_id", "workspace_id", "domain_id"])
+    def set_schedule(self, params: dict):
         """Set schedule for Project Channel
 
         Args:
@@ -166,14 +176,16 @@ class ProjectChannelService(BaseService):
                 'project_channel_id': 'str',
                 'is_scheduled': bool,
                 'schedule': dict,
-                'domain_id': 'str'
+                'workspace_id': 'str',          # injected from auth
+                'domain_id': 'str'              # injected from auth
             }
 
         Returns:
             project_channel_vo (object)
         """
+
         project_channel_vo = self.project_channel_mgr.get_project_channel(
-            params["project_channel_id"], params["domain_id"]
+            params["project_channel_id"], params["workspace_id"], params["domain_id"]
         )
 
         is_scheduled = params.get("is_scheduled", False)
@@ -191,16 +203,17 @@ class ProjectChannelService(BaseService):
         permission="notification:ProjectChannel.write",
         role_types=["WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
     )
-    @check_required(["project_channel_id", "domain_id"])
+    @check_required(["project_channel_id", "workspace_id", "domain_id"])
     def set_subscription(self, params):
         """Set subscriptions for Project Channel
 
         Args:
             params (dict): {
-                'project_channel_id': 'str',
+                'project_channel_id': 'str',    # required
                 'is_subscribe': bool,
                 'subscriptions': list,
-                'domain_id': 'str'
+                'workspace_id': 'str',          # injected from auth
+                'domain_id': 'str'              # injected from auth
             }
 
         Returns:
@@ -209,36 +222,42 @@ class ProjectChannelService(BaseService):
         if not params.get("is_subscribe", False):
             params.update({"is_subscribe": False, "subscriptions": []})
 
-        return self.project_channel_mgr.update_project_channel(params)
+        proejct_channel_vo = self.project_channel_mgr.get_project_channel(
+            params["project_channel_id"], params["workspace_id"], params["domain_id"]
+        )
+        proejct_channel_vo = self.project_channel_mgr.update_project_channel_by_vo(
+            params, proejct_channel_vo
+        )
+        return proejct_channel_vo
 
     @transaction(
         permission="notification:ProjectChannel.write",
         role_types=["WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
     )
-    @check_required(["project_channel_id", "domain_id"])
+    @check_required(["project_channel_id", "workspace_id", "domain_id"])
     def delete(self, params):
         """Delete project channel
 
         Args:
             params (dict): {
                 'project_channel_id': 'str',
-                'domain_id': 'str'
+                'workspace_id': 'str',          # injected from auth
+                'domain_id': 'str'              # injected from auth
             }
 
         Returns:
             None
         """
         project_channel_id = params["project_channel_id"]
+        workspace_id = params["workspace_id"]
         domain_id = params["domain_id"]
 
         project_channel_vo = self.project_channel_mgr.get_project_channel(
-            project_channel_id, domain_id
+            project_channel_id, workspace_id, domain_id
         )
 
         if secret_id := project_channel_vo.secret_id:
-            self.secret_mgr.delete_secret(
-                {"secret_id": secret_id, "domain_id": domain_id}
-            )
+            self.secret_mgr.delete_secret(secret_id)
 
         self.project_channel_mgr.delete_project_channel_by_vo(project_channel_vo)
 
@@ -246,67 +265,82 @@ class ProjectChannelService(BaseService):
         permission="notification:ProjectChannel.write",
         role_types=["WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
     )
-    @check_required(["project_channel_id", "domain_id"])
+    @check_required(["project_channel_id", "workspace_id", "domain_id"])
     def enable(self, params):
         """Enable project channel
 
         Args:
             params (dict): {
-                'project_channel_id': 'str',
-                'domain_id': 'str'
+                'project_channel_id': 'str',    # required
+                'workspace_id': 'str',          # injected from auth
+                'domain_id': 'str'              # injected from auth
             }
 
         Returns:
             project_channel_vo (object)
         """
 
-        return self.project_channel_mgr.enable_project_channel(
-            params["project_channel_id"], params["domain_id"]
+        project_channel_vo = self.project_channel_mgr.get_project_channel(
+            params["project_channel_id"], params["workspace_id"], params["domain_id"]
         )
+
+        project_channel_vo = self.project_channel_mgr.enable_project_channel(
+            project_channel_vo
+        )
+
+        return project_channel_vo
 
     @transaction(
         permission="notification:ProjectChannel.write",
         role_types=["WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
     )
-    @check_required(["project_channel_id", "domain_id"])
+    @check_required(["project_channel_id", "workspace_id", "domain_id"])
     def disable(self, params):
         """Disable project channel
 
         Args:
             params (dict): {
-                'project_channel_id': 'str',
-                'domain_id': 'str'
+                'project_channel_id': 'str',    # required
+                'workspace_id': 'str',          # injected from auth
+                'domain_id': 'str'              # injected from auth
             }
 
         Returns:
             project_channel_vo (object)
         """
 
-        return self.project_channel_mgr.disable_project_channel(
-            params["project_channel_id"], params["domain_id"]
+        project_channel_vo = self.project_channel_mgr.get_project_channel(
+            params["project_channel_id"], params["workspace_id"], params["domain_id"]
         )
+
+        project_channel_vo = self.project_channel_mgr.disable_project_channel(
+            project_channel_vo
+        )
+
+        return project_channel_vo
 
     @transaction(
         permission="notification:ProjectChannel.read",
         role_types=["DOMAIN_OWNER", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
     )
-    @check_required(["project_channel_id", "domain_id"])
+    @check_required(["project_channel_id", "workspace_id", "domain_id"])
     def get(self, params):
         """Get Project Channel
 
         Args:
             params (dict): {
-                'project_channel_id': 'str',
-                'only': 'list'
+                'project_channel_id': 'str',    # required
+                'workspace_id': 'str',          # injected from auth
+                'domain_id': 'str',             # injected from auth
             }
 
         Returns:
             project_channel_vo (object)
         """
-
-        return self.project_channel_mgr.get_project_channel(
-            params["project_channel_id"], params["domain_id"], params.get("only")
+        project_channel_vo = self.project_channel_mgr.get_project_channel(
+            params["project_channel_id"], params["workspace_id"], params["domain_id"]
         )
+        return project_channel_vo
 
     @transaction(
         permission="notification:ProjectChannel.read",
@@ -324,6 +358,7 @@ class ProjectChannelService(BaseService):
             "notification_level",
             "protocol_id",
             "project_id",
+            "workspace_id",
             "domain_id",
             "user_projects",
         ]
@@ -331,9 +366,9 @@ class ProjectChannelService(BaseService):
     @append_keyword_filter(["project_channel_id", "name"])
     def list(self, params):
         """List Project Channels
-
-        Args:
+                Args:
             params (dict): {
+                'query': 'dict (spaceone.api.core.v1.Query)',
                 'project_channel_id': 'str',
                 'name': 'str',
                 'state': 'str',
@@ -343,8 +378,8 @@ class ProjectChannelService(BaseService):
                 'notification_level': 'str',
                 'protocol_id': 'str',
                 'project_id': 'str',
+                'workspace_id': 'str',
                 'domain_id': 'str',
-                'query': 'dict (spaceone.api.core.v1.Query)',
                 'user_projects': 'list', // from meta
             }
 
@@ -366,8 +401,8 @@ class ProjectChannelService(BaseService):
         """
         Args:
             params (dict): {
-                'domain_id': 'str',
                 'query': 'dict (spaceone.api.core.v1.StatisticsQuery)',
+                'domain_id': 'str',
                 'user_projects': 'list', // from meta
             }
 
