@@ -248,7 +248,7 @@ class ProtocolService(BaseService):
 
     @transaction(
         permission="notification:Protocol.read",
-        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
+        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER", "USER"],
     )
     @check_required(["protocol_id", "domain_id"])
     def get(self, params):
@@ -274,7 +274,7 @@ class ProtocolService(BaseService):
 
     @transaction(
         permission="notification:Protocol.read",
-        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
+        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER", "USER"],
     )
     @check_required(["domain_id"])
     @append_query_filter(["protocol_id", "name", "state", "protocol_type", "domain_id"])
@@ -307,7 +307,7 @@ class ProtocolService(BaseService):
 
     @transaction(
         permission="notification:Protocol.read",
-        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER"],
+        role_types=["DOMAIN_ADMIN", "WORKSPACE_OWNER", "WORKSPACE_MEMBER", "USER"],
     )
     @check_required(["query", "domain_id"])
     @append_query_filter(["domain_id"])
