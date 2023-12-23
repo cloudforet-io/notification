@@ -62,7 +62,7 @@ class ProjectChannelManager(BaseManager):
     ):
         return self.project_channel_model.get(
             project_channel_id=project_channel_id,
-            workspcae_id=workspace_id,
+            workspace_id=workspace_id,
             domain_id=domain_id,
         )
 
