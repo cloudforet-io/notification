@@ -47,13 +47,13 @@ class ProjectChannelManager(BaseManager):
     def enable_project_channel(
         self, project_channel_vo: ProjectChannel
     ) -> ProjectChannel:
-        self.update_project_channel_by_vo(project_channel_vo, {"state": "ENABLED"})
+        self.update_project_channel_by_vo({"state": "ENABLED"}, project_channel_vo)
         return project_channel_vo
 
     def disable_project_channel(
         self, project_channel_vo: ProjectChannel
     ) -> ProjectChannel:
-        self.update_project_channel_by_vo(project_channel_vo, {"state": "DISABLED"})
+        self.update_project_channel_by_vo({"state": "DISABLED"}, project_channel_vo)
 
         return project_channel_vo
 
