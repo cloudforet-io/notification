@@ -17,19 +17,15 @@ import os
 from setuptools import setup, find_packages
 
 setup(
-    name='spaceone-notification',
-    version=os.environ.get('PACKAGE_VERSION'),
-    description='SpaceONE notification service',
-    long_description='',
-    url='https://www.spaceone.dev/',
-    author='MEGAZONE SpaceONE Team',
-    author_email='admin@spaceone.dev',
-    license='Apache License 2.0',
+    name="spaceone-notification",
+    version=os.environ.get("PACKAGE_VERSION"),
+    description="SpaceONE notification service",
+    long_description="",
+    url="https://www.spaceone.dev/",
+    author="MEGAZONE SpaceONE Team",
+    author_email="admin@spaceone.dev",
+    license="Apache License 2.0",
     packages=find_packages(),
-    install_requires=[
-        'spaceone-api',
-        'langcodes',
-        'fakeredis'
-    ],
+    install_requires=["spaceone-core", "spaceone-api", "langcodes", "fakeredis"],
     zip_safe=False,
 )

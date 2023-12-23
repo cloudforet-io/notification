@@ -9,3 +9,4 @@ from spaceone.notification.manager.notification_manager import NotificationManag
 from spaceone.notification.manager.notification_usage_manager import (
     NotificationUsageManager,
 )
+from spaceone.notification.manager.user_secret_manager import UserSecretManager
