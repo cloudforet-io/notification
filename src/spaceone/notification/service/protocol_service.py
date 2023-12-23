@@ -426,9 +426,9 @@ class ProtocolService(BaseService):
         if "plugin_id" not in plugin_info_params:
             raise ERROR_REQUIRED_PARAMETER(key="plugin_info.plugin_id")
 
-        if (
-            "secret_data" in plugin_info_params
-            and "schema_id" not in plugin_info_params
+        # Todo : modify schema to schema_id after migration
+        if "secret_data" in plugin_info_params and (
+            "schema_id" not in plugin_info_params or "schema" not in plugin_info_params
         ):
             raise ERROR_REQUIRED_PARAMETER(key="plugin_info.schema_id")
 
