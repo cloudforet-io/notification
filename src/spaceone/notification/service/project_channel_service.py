@@ -1,3 +1,4 @@
+import logging
 from jsonschema import validate
 
 from spaceone.core import utils
@@ -10,6 +11,8 @@ from spaceone.notification.manager import ProtocolManager
 from spaceone.notification.manager import ProjectChannelManager
 from spaceone.notification.manager import SecretManager
 from spaceone.notification.model import ProjectChannel
+
+_LOGGER = logging.getLogger(__name__)
 
 
 @authentication_handler
@@ -80,10 +83,10 @@ class ProjectChannelService(BaseService):
             raise ERROR_PROTOCOL_DISABLED()
 
         metadata = protocol_vo.plugin_info.metadata
-        schema_id = metadata.get("data", {}).get("schema")  # TODO: change to schema_id
+        schema = metadata.get("data", {}).get("schema")  # TODO: change to schema_id
 
-        if schema_id:
-            validate_json_schema(data, schema_id)
+        if schema:
+            validate_json_schema(data, schema)
 
         if metadata["data_type"] == "SECRET":
             new_secret_parameters = {
@@ -142,12 +145,10 @@ class ProjectChannelService(BaseService):
                 project_channel_vo.protocol_id, domain_id
             )
             metadata = protocol_vo.plugin_info.metadata
-            schema_id = metadata.get("data", {}).get(
-                "schema"
-            )  # TODO: change to schema_id
+            schema = metadata.get("data", {}).get("schema")  # TODO: change to schema_id
 
-            if schema_id:
-                validate_json_schema(params["data"], schema_id)
+            if schema:
+                validate_json_schema(params["data"], schema)
 
             if project_channel_vo.secret_id:
                 secret_params = {

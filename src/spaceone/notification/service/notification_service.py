@@ -46,7 +46,6 @@ class NotificationService(BaseService):
                 'message': 'dict',
                 'notification_type': 'str' -> INFO(default) | ERROR | SUCCESS | WARNING,
                 'notification_level': 'str' -> ALL(default) | LV1 | LV2 | LV3 | LV4 | LV5,
-                'workspace_id': str                                                             # injected from auth
                 'domain_id': 'str'                                                              # injected from auth
             }
 
@@ -56,7 +55,6 @@ class NotificationService(BaseService):
         identity_mgr: IdentityManager = self.locator.get_manager("IdentityManager")
 
         domain_id = params["domain_id"]
-        workspace_id = params.get("workspace_id")
         resource_type = params["resource_type"]
         resource_id = params["resource_id"]
         message = params["message"]
@@ -144,9 +142,9 @@ class NotificationService(BaseService):
                 )
 
                 if (
-                    dispatch_subscribe
-                    and dispatch_schedule
-                    and dispatch_notification_level
+                        dispatch_subscribe
+                        and dispatch_schedule
+                        and dispatch_notification_level
                 ):
                     _LOGGER.info(
                         f"[Notification] Dispatch Notification to project: {resource_id}"
@@ -420,13 +418,13 @@ class NotificationService(BaseService):
         return self.notification_mgr.stat_notifications(query)
 
     def push_queue(
-        self,
-        protocol_id,
-        channel_data,
-        secret_data,
-        notification_type,
-        message,
-        domain_id,
+            self,
+            protocol_id,
+            channel_data,
+            secret_data,
+            notification_type,
+            message,
+            domain_id,
     ):
         task = {
             "name": "dispatch_notification",
@@ -508,13 +506,13 @@ class NotificationService(BaseService):
         return secret_data
 
     def dispatch_notification(
-        self,
-        protocol_id,
-        channel_data,
-        secret_data,
-        notification_type,
-        message,
-        domain_id,
+            self,
+            protocol_id,
+            channel_data,
+            secret_data,
+            notification_type,
+            message,
+            domain_id,
     ):
         protocol_mgr: ProtocolManager = self.locator.get_manager("ProtocolManager")
         plugin_mgr: PluginManager = self.locator.get_manager("PluginManager")
@@ -559,14 +557,14 @@ class NotificationService(BaseService):
             _LOGGER.info("[Notification] Protocol is disabled. skip notification")
 
     def _dispatch_notification(
-        self,
-        protocol_vo,
-        secret_data,
-        channel_data,
-        notification_type,
-        message,
-        options,
-        plugin_mgr,
+            self,
+            protocol_vo,
+            secret_data,
+            channel_data,
+            notification_type,
+            message,
+            options,
+            plugin_mgr,
     ):
         month, date = self.get_month_date()
         noti_usage_vo, usage_month, usage_date = self.get_notification_usage(
@@ -666,7 +664,7 @@ class NotificationService(BaseService):
 
     @staticmethod
     def check_notification_level_for_dispatch(
-        notification_level, prj_channel_notification_level
+            notification_level, prj_channel_notification_level
     ):
         if notification_level == "ALL":
             return True

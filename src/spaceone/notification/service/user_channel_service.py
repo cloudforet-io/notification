@@ -1,5 +1,8 @@
+import logging
+
 from spaceone.core import utils
 from spaceone.core.service import *
+
 from spaceone.notification.error import *
 from spaceone.notification.lib.schedule import *
 from spaceone.notification.lib.schema import *
@@ -9,6 +12,8 @@ from spaceone.notification.manager import UserSecretManager
 from spaceone.notification.model import UserChannel
 from spaceone.notification.manager import ProtocolManager
 from spaceone.notification.model.protocol_model import Protocol
+
+_LOGGER = logging.getLogger(__name__)
 
 
 @authentication_handler
@@ -80,7 +85,9 @@ class UserChannelService(BaseService):
             raise ERROR_PROTOCOL_INTERNVAL()
 
         metadata = protocol_vo.plugin_info.metadata
-        validate_json_schema(metadata.get("data", {}).get("schema_id", {}), data)
+        schema = metadata.get("data", {}).get("schema", {})
+        if schema:
+            validate_json_schema(schema, data)
 
         if metadata["data_type"] == "SECRET":
             new_secret_parameters = {
@@ -128,7 +135,7 @@ class UserChannelService(BaseService):
 
         if "data" in params and user_channel_vo.secret_id:
             secret_params = {
-                "secret_id": user_channel_vo.secret_id,
+                "user_secret_id": user_channel_vo.secret_id,
                 "data": params["data"],
             }
 

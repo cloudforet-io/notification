@@ -83,13 +83,18 @@ class ProtocolService(BaseService):
                 "name": utils.generate_id("secret-noti-proto", 4),
                 "data": plugin_info["secret_data"],
                 "resource_group": "WORKSPACE",
-                "schema_id": plugin_info["schema"],  # todo change to schema_id
             }
+
+            # if schema_id := plugin_info.get("schema_id"):
+            #     secret_params["schema_id"] = schema_id
+            # if provider := plugin_info.get("provider"):
+            #     secret_params["provider"] = provider
+
             protocol_secret = secret_mgr.create_secret(secret_params)
             request_plugin.update(
                 {
                     "secret_id": protocol_secret["secret_id"],
-                    "schema_id": plugin_info["schema"],  # todo change to schema_id
+                    "schema": plugin_info["schema"],  # todo change to schema_id
                 }
             )
 
@@ -427,10 +432,8 @@ class ProtocolService(BaseService):
             raise ERROR_REQUIRED_PARAMETER(key="plugin_info.plugin_id")
 
         # Todo : modify schema to schema_id after migration
-        if "secret_data" in plugin_info_params and (
-            "schema_id" not in plugin_info_params or "schema" not in plugin_info_params
-        ):
-            raise ERROR_REQUIRED_PARAMETER(key="plugin_info.schema_id")
+        if "secret_data" in plugin_info_params and "schema" not in plugin_info_params:
+            raise ERROR_REQUIRED_PARAMETER(key="plugin_info.schema")
 
         if (
             "upgrade_mode" in plugin_info_params
