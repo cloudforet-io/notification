@@ -99,7 +99,9 @@ class UserChannelService(BaseService):
                 new_secret_parameters
             )
 
-            params.update({"secret_id": user_channel_secret["secret_id"], "data": {}})
+            params.update(
+                {"secret_id": user_channel_secret["user_secret_id"], "data": {}}
+            )
 
         return self.user_channel_mgr.create_user_channel(params)
 
