@@ -23,9 +23,9 @@ class UserSecretManager(BaseManager):
     def update_user_secret_data(self, params):
         return self.secret_connector.dispatch("UserSecret.update_data", params)
 
-    def delete_user_secret(self, secret_id: str):
+    def delete_user_secret(self, user_secret_id: str):
         return self.secret_connector.dispatch(
-            "UserSecret.delete", {"secret_id": secret_id}
+            "UserSecret.delete", {"user_secret_id": user_secret_id}
         )
 
     def list_secrets(self, query, domain_id):
