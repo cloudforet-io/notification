@@ -82,7 +82,7 @@ class ProtocolService(BaseService):
             secret_params = {
                 "name": utils.generate_id("secret-noti-proto", 4),
                 "data": plugin_info["secret_data"],
-                "resource_group": "WORKSPACE",
+                "resource_group": "DOMAIN",
             }
 
             # if schema_id := plugin_info.get("schema_id"):
