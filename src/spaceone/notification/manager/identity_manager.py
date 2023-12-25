@@ -24,11 +24,12 @@ class IdentityManager(BaseManager):
             "SpaceConnector", service="identity"
         )
 
-    def get_resource(self, resource_id: str, resource_type: str):
+    def get_resource(self, resource_id: str, resource_type: str, domain_id: str):
         get_method = _GET_RESOURCE_METHODS[resource_type]
         return self.identity_connector.dispatch(
             get_method["dispatch_method"],
             {get_method["key"]: resource_id},
+            x_domain_id=domain_id,
         )
 
     def get_domain_info(self, domain_id: str) -> dict:
