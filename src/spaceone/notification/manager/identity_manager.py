@@ -31,10 +31,10 @@ class IdentityManager(BaseManager):
             {get_method["key"]: resource_id},
         )
 
-    def get_domain_info(self, domain_id):
+    def get_domain_info(self, domain_id: str) -> dict:
         token = config.get_global("TOKEN")
         return self.identity_connector.dispatch(
-            "Domain.get", {"domain_id": domain_id}, token=token
+            "Domain.get", {}, token=token, x_domain_id=domain_id
         )
 
     def get_all_users_in_domain(self):
