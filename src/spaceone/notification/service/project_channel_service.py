@@ -76,7 +76,7 @@ class ProjectChannelService(BaseService):
         else:
             params["schedule"] = None
 
-        self.identity_mgr.get_resource(project_id, "identity.Project")
+        self.identity_mgr.get_resource(project_id, "identity.Project", domain_id)
         protocol_vo = self.protocol_mgr.get_protocol(protocol_id, domain_id)
 
         if protocol_vo.state == "DISABLED":
