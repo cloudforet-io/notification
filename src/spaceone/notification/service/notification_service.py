@@ -10,6 +10,7 @@ from spaceone.notification.manager import ProjectChannelManager
 from spaceone.notification.manager import UserChannelManager
 from spaceone.notification.manager import ProtocolManager
 from spaceone.notification.manager import SecretManager
+from spaceone.notification.manager import UserSecretManager
 from spaceone.notification.manager import PluginManager
 from spaceone.notification.manager import NotificationUsageManager
 from spaceone.notification.conf.global_conf import *
@@ -233,7 +234,7 @@ class NotificationService(BaseService):
                     channel_data = self.get_channel_data(
                         user_ch_vo, protocol_vo, domain_id
                     )
-                    secret_data = self.get_secret_data(protocol_vo, domain_id)
+                    secret_data = self.get_user_secret_data(protocol_vo, domain_id)
 
                     self.push_queue(
                         protocol_vo.protocol_id,
@@ -351,7 +352,7 @@ class NotificationService(BaseService):
         """
 
         return self.notification_mgr.get_notification(
-            params["notification_id"], params["domain_id"], params.get("only")
+            params["notification_id"], params["domain_id"]
         )
 
     @transaction(permission="notification:Notification.read", role_types=["USER"])
@@ -500,6 +501,17 @@ class NotificationService(BaseService):
 
         if secret_id := plugin_info.get("secret_id"):
             secret_data = secret_mgr.get_secret_data(secret_id, domain_id)
+
+        return secret_data
+
+    def get_user_secret_data(self, protocol_vo, domain_id):
+        user_secret_mgr: UserSecretManager = self.locator.get_manager("SecretManager")
+
+        secret_data = {}
+        plugin_info = protocol_vo.plugin_info.to_dict()
+
+        if user_secret_id := plugin_info.get("secret_id"):
+            secret_data = user_secret_mgr.get_secret_data(user_secret_id, domain_id)
 
         return secret_data
 

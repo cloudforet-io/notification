@@ -9,7 +9,7 @@ _LOGGER = logging.getLogger(__name__)
 _GET_RESOURCE_METHODS = {
     "identity.Domain": {"dispatch_method": "Domain.get", "key": "domain_id"},
     "identity.Project": {"dispatch_method": "Project.get", "key": "project_id"},
-    "identity.User": {"dispatch_method": "User.get", "key": "user_id"},
+    "identity.User": {"dispatch_method": "UserProfile.get", "key": "user_id"},
     "identity.ServiceAccount": {
         "dispatch_method": "ServiceAccount.get",
         "key": "service_account_id",
@@ -31,6 +31,9 @@ class IdentityManager(BaseManager):
             {get_method["key"]: resource_id},
             x_domain_id=domain_id,
         )
+
+    def get_user_profile(self):
+        return self.identity_connector.dispatch("UserProfile.get", {})
 
     def get_domain_info(self, domain_id: str) -> dict:
         token = config.get_global("TOKEN")

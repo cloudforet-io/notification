@@ -7,17 +7,20 @@ _LOGGER = logging.getLogger(__name__)
 
 
 class NotificationManager(BaseManager):
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.notification_model: Notification = self.locator.get_model('Notification')
+        self.notification_model: Notification = self.locator.get_model("Notification")
 
     def create_notification(self, params):
-        def _rollback(notification_vo):
-            _LOGGER.info(f'[create_protocol._rollback]'
-                         f'Delete Notification : {notification_vo.name}'
-                         f'({notification_vo.protocol_id})')
+        def _rollback(vo: Notification):
+            _LOGGER.info(
+                f"[create_protocol._rollback]"
+                f"Delete Notification : {vo.notification_id}"
+                f"({notification_vo.user_id})"
+                f"({notification_vo.domain_id})"
+            )
             notification_vo.delete()
+
         notification_vo: Notification = self.notification_model.create(params)
         self.transaction.add_rollback(_rollback, notification_vo)
 
@@ -25,19 +28,25 @@ class NotificationManager(BaseManager):
 
     def set_read_notification(self, notifications, domain_id):
         def _rollback(notification_vos):
-            _LOGGER.info(f'[set_read_notification._rollback]')
-            notification_vos.update({'is_read': False})
+            _LOGGER.info(f"[set_read_notification._rollback]")
+            notification_vos.update({"is_read": False})
 
-        query = {'filter': [{'k': 'notification_id', 'v': notifications, 'o': 'in'},
-                            {'k': 'domain_id', 'v': domain_id, 'o': 'eq'},
-                            {'k': 'is_read', 'v': False, 'o': 'eq'}]}
+        query = {
+            "filter": [
+                {"k": "notification_id", "v": notifications, "o": "in"},
+                {"k": "domain_id", "v": domain_id, "o": "eq"},
+                {"k": "is_read", "v": False, "o": "eq"},
+            ]
+        }
 
         notification_vos, total_count = self.list_notifications(query)
         self.transaction.add_rollback(_rollback, notification_vos)
-        notification_vos.update({'is_read': True})
+        notification_vos.update({"is_read": True})
 
-    def get_notification(self, notification_id, domain_id, only=None):
-        return self.notification_model.get(notification_id=notification_id, domain_id=domain_id, only=only)
+    def get_notification(self, notification_id: str, domain_id: str):
+        return self.notification_model.get(
+            notification_id=notification_id, domain_id=domain_id
+        )
 
     def list_notifications(self, query):
         return self.notification_model.query(**query)
