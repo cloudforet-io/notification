@@ -75,7 +75,7 @@ class UserChannelService(BaseService):
         else:
             params["schedule"] = None
 
-        self.identity_mgr.get_resource(user_id, "identity.User", domain_id)
+        self.identity_mgr.get_user_profile()
         protocol_vo: Protocol = self.protocol_mgr.get_protocol(protocol_id, domain_id)
 
         if protocol_vo.state == "DISABLED":

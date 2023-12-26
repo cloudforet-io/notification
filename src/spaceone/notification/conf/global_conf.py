@@ -43,6 +43,17 @@ HANDLERS = {
     # "event": []
 }
 
+# Log Settings
+LOG = {
+    "filters": {
+        "masking": {
+            "rules": {
+                "UserChannel.create": ["data"],
+            }
+        }
+    }
+}
+
 CONNECTORS = {
     "PluginServiceConnector": {},
     "SpaceConnector": {
