@@ -31,9 +31,9 @@ class SecretManager(BaseManager):
             "Secret.list", {"query": query, "domain_id": domain_id}
         )
 
-    def get_secret_data(self, user_secret_id, domain_id):
+    def get_secret_data(self, secret_id: str, domain_id: str):
         response = self.secret_connector.dispatch(
-            "Secret.get_data", {"secret_id": user_secret_id, "domain_id": domain_id}
+            "Secret.get_data", {"secret_id": secret_id, "domain_id": domain_id}
         )
         return response["data"]
 

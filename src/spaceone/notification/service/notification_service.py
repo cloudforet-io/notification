@@ -3,6 +3,7 @@ import datetime
 
 from spaceone.core import queue, utils
 from spaceone.core.service import *
+
 from spaceone.notification.lib.schedule import *
 from spaceone.notification.manager import IdentityManager
 from spaceone.notification.manager import NotificationManager
@@ -13,6 +14,7 @@ from spaceone.notification.manager import SecretManager
 from spaceone.notification.manager import UserSecretManager
 from spaceone.notification.manager import PluginManager
 from spaceone.notification.manager import NotificationUsageManager
+from spaceone.notification.model import Protocol, UserChannel
 from spaceone.notification.conf.global_conf import *
 
 _LOGGER = logging.getLogger(__name__)
@@ -231,10 +233,10 @@ class NotificationService(BaseService):
                     _LOGGER.info(
                         f"[Notification] Dispatch Notification to user: {resource_id}"
                     )
-                    channel_data = self.get_channel_data(
+                    channel_data = self.get_user_channel_data(
                         user_ch_vo, protocol_vo, domain_id
                     )
-                    secret_data = self.get_user_secret_data(protocol_vo, domain_id)
+                    secret_data = self.get_secret_data(protocol_vo, domain_id)
 
                     self.push_queue(
                         protocol_vo.protocol_id,
@@ -493,7 +495,27 @@ class NotificationService(BaseService):
 
         return channel_data
 
-    def get_secret_data(self, protocol_vo, domain_id):
+    def get_user_channel_data(
+        self, user_channel_vo: UserChannel, protocol_vo: Protocol, domain_id: str
+    ):
+        user_secret_mgr: UserSecretManager = self.locator.get_manager(
+            "UserSecretManager"
+        )
+
+        channel_data = None
+        plugin_info = protocol_vo.plugin_info.to_dict()
+        plugin_metadata = plugin_info.get("metadata", {})
+
+        if plugin_metadata.get("data_type") == "PLAIN_TEXT":
+            channel_data = user_channel_vo.data
+        elif plugin_metadata.get("data_type") == "SECRET":
+            channel_data = user_secret_mgr.get_secret_data(
+                user_channel_vo.secret_id, domain_id
+            )
+
+        return channel_data
+
+    def get_secret_data(self, protocol_vo: Protocol, domain_id: str):
         secret_mgr: SecretManager = self.locator.get_manager("SecretManager")
 
         secret_data = {}
@@ -501,17 +523,6 @@ class NotificationService(BaseService):
 
         if secret_id := plugin_info.get("secret_id"):
             secret_data = secret_mgr.get_secret_data(secret_id, domain_id)
-
-        return secret_data
-
-    def get_user_secret_data(self, protocol_vo, domain_id):
-        user_secret_mgr: UserSecretManager = self.locator.get_manager("SecretManager")
-
-        secret_data = {}
-        plugin_info = protocol_vo.plugin_info.to_dict()
-
-        if user_secret_id := plugin_info.get("secret_id"):
-            secret_data = user_secret_mgr.get_secret_data(user_secret_id, domain_id)
 
         return secret_data
 
