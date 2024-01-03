@@ -55,7 +55,7 @@ class NotificationService(BaseService):
         Returns:
             notification_vo (object)
         """
-        identity_mgr: IdentityManager = self.locator.get_manager("IdentityManager")
+        identity_mgr: IdentityManager = self.locator.get_manager(IdentityManager)
 
         domain_id = params["domain_id"]
         resource_type = params["resource_type"]
@@ -77,10 +77,11 @@ class NotificationService(BaseService):
             self.dispatch_user_channel(params)
 
     def dispatch_domain(self, params):
-        _LOGGER.debug(f'[Dispatch Domain] Domain ID: {params["resource_id"]}')
+        domain_id = params["resource_id"]
+        _LOGGER.debug(f'[Dispatch Domain] Domain ID: {domain_id}')
 
-        identity_mgr: IdentityManager = self.locator.get_manager("IdentityManager")
-        users = identity_mgr.get_all_users_in_domain()
+        identity_mgr: IdentityManager = self.locator.get_manager(IdentityManager)
+        users = identity_mgr.get_all_users_in_domain(domain_id)
 
         for user in users:
             user_channel_params = {
@@ -90,21 +91,21 @@ class NotificationService(BaseService):
                 "message": params["message"],
                 "resource_type": "identity.User",
                 "resource_id": user["user_id"],
-                "domain_id": params["resource_id"],
+                "domain_id": domain_id,
             }
 
             self.dispatch_user_channel(user_channel_params)
 
     def dispatch_project_channel(self, params: dict):
-        _LOGGER.debug(f'[Dispatch Project Channel] Project ID: {params["resource_id"]}')
-        protocol_mgr: ProtocolManager = self.locator.get_manager("ProtocolManager")
+        project_id = params["resource_id"]
+        _LOGGER.debug(f'[Dispatch Project Channel] Project ID: {project_id}')
+        protocol_mgr: ProtocolManager = self.locator.get_manager(ProtocolManager)
         project_ch_mgr: ProjectChannelManager = self.locator.get_manager(
-            "ProjectChannelManager"
+            ProjectChannelManager
         )
 
         domain_id = params["domain_id"]
         topic = params["topic"]
-        resource_id = params["resource_id"]
 
         notification_type = params.get("notification_type", "INFO")
         notification_level = params.get("notification_level", "ALL")
@@ -113,7 +114,7 @@ class NotificationService(BaseService):
         prj_ch_vos, prj_ch_total_count = project_ch_mgr.list_project_channels(
             {
                 "filter": [
-                    {"k": "project_id", "v": resource_id, "o": "eq"},
+                    {"k": "project_id", "v": project_id, "o": "eq"},
                     {"k": "domain_id", "v": domain_id, "o": "eq"},
                 ]
             }
@@ -143,12 +144,12 @@ class NotificationService(BaseService):
                 )
 
                 if (
-                    dispatch_subscribe
-                    and dispatch_schedule
-                    and dispatch_notification_level
+                        dispatch_subscribe
+                        and dispatch_schedule
+                        and dispatch_notification_level
                 ):
                     _LOGGER.info(
-                        f"[Notification] Dispatch Notification to project: {resource_id}"
+                        f"[Notification] Dispatch Notification to project: {project_id}"
                     )
 
                     if protocol_vo.protocol_type == "INTERNAL":
@@ -166,7 +167,7 @@ class NotificationService(BaseService):
                             self.dispatch_user_channel(params)
                     elif protocol_vo.protocol_type == "EXTERNAL":
                         _LOGGER.info(
-                            f"[Notification] Dispatch Notification to project: {resource_id}"
+                            f"[Notification] Dispatch Notification to project: {project_id}"
                         )
                         channel_data = self.get_channel_data(
                             prj_ch_vo, protocol_vo, domain_id
@@ -183,7 +184,7 @@ class NotificationService(BaseService):
                         )
                 else:
                     _LOGGER.info(
-                        f"[Notification] Skip Notification to project: {resource_id}"
+                        f"[Notification] Skip Notification to project: {project_id}"
                     )
             else:
                 _LOGGER.info(
@@ -191,14 +192,14 @@ class NotificationService(BaseService):
                 )
 
     def dispatch_user_channel(self, params):
-        _LOGGER.debug(f'[Dispatch User Channel] User ID: {params["resource_id"]}')
+        user_id = params["resource_id"]
+        _LOGGER.debug(f'[Dispatch User Channel] User ID: {user_id}')
 
-        protocol_mgr: ProtocolManager = self.locator.get_manager("ProtocolManager")
-        user_ch_mgr: UserChannelManager = self.locator.get_manager("UserChannelManager")
+        protocol_mgr: ProtocolManager = self.locator.get_manager(ProtocolManager)
+        user_ch_mgr: UserChannelManager = self.locator.get_manager(UserChannelManager)
 
         domain_id = params["domain_id"]
         topic = params["topic"]
-        resource_id = params["resource_id"]
 
         notification_type = params.get("notification_type", "INFO")
         message = params["message"]
@@ -206,7 +207,7 @@ class NotificationService(BaseService):
         user_ch_vos, user_ch_total_count = user_ch_mgr.list_user_channels(
             {
                 "filter": [
-                    {"k": "user_id", "v": resource_id, "o": "eq"},
+                    {"k": "user_id", "v": user_id, "o": "eq"},
                     {"k": "domain_id", "v": domain_id, "o": "eq"},
                 ]
             }
@@ -231,7 +232,7 @@ class NotificationService(BaseService):
 
                 if dispatch_subscribe and dispatch_schedule:
                     _LOGGER.info(
-                        f"[Notification] Dispatch Notification to user: {resource_id}"
+                        f"[Notification] Dispatch Notification to user: {user_id}"
                     )
                     channel_data = self.get_user_channel_data(
                         user_ch_vo, protocol_vo, domain_id
@@ -248,14 +249,14 @@ class NotificationService(BaseService):
                     )
                 else:
                     _LOGGER.info(
-                        f"[Notification] Skip Notification to user: {resource_id}"
+                        f"[Notification] Skip Notification to user: {user_id}"
                     )
             else:
                 _LOGGER.info(
                     f"[Notification] User Channel is disabled: {user_ch_vo.user_channel_id}"
                 )
 
-        params.update({"user_id": resource_id})
+        params.update({"user_id": user_id})
         self.notification_mgr.create_notification(params)
 
     @transaction(
@@ -419,13 +420,13 @@ class NotificationService(BaseService):
         return self.notification_mgr.stat_notifications(query)
 
     def push_queue(
-        self,
-        protocol_id,
-        channel_data,
-        secret_data,
-        notification_type,
-        message,
-        domain_id,
+            self,
+            protocol_id,
+            channel_data,
+            secret_data,
+            notification_type,
+            message,
+            domain_id,
     ):
         task = {
             "name": "dispatch_notification",
@@ -482,7 +483,7 @@ class NotificationService(BaseService):
         notification_vos.delete()
 
     def get_channel_data(self, channel_vo, protocol_vo, domain_id):
-        secret_mgr: SecretManager = self.locator.get_manager("SecretManager")
+        secret_mgr: SecretManager = self.locator.get_manager(SecretManager)
 
         channel_data = None
         plugin_info = protocol_vo.plugin_info.to_dict()
@@ -496,7 +497,7 @@ class NotificationService(BaseService):
         return channel_data
 
     def get_user_channel_data(
-        self, user_channel_vo: UserChannel, protocol_vo: Protocol, domain_id: str
+            self, user_channel_vo: UserChannel, protocol_vo: Protocol, domain_id: str
     ):
         user_secret_mgr: UserSecretManager = self.locator.get_manager(
             "UserSecretManager"
@@ -516,7 +517,7 @@ class NotificationService(BaseService):
         return channel_data
 
     def get_secret_data(self, protocol_vo: Protocol, domain_id: str):
-        secret_mgr: SecretManager = self.locator.get_manager("SecretManager")
+        secret_mgr: SecretManager = self.locator.get_manager(SecretManager)
 
         secret_data = {}
         plugin_info = protocol_vo.plugin_info.to_dict()
@@ -527,16 +528,16 @@ class NotificationService(BaseService):
         return secret_data
 
     def dispatch_notification(
-        self,
-        protocol_id,
-        channel_data,
-        secret_data,
-        notification_type,
-        message,
-        domain_id,
+            self,
+            protocol_id,
+            channel_data,
+            secret_data,
+            notification_type,
+            message,
+            domain_id,
     ):
-        protocol_mgr: ProtocolManager = self.locator.get_manager("ProtocolManager")
-        plugin_mgr: PluginManager = self.locator.get_manager("PluginManager")
+        protocol_mgr: ProtocolManager = self.locator.get_manager(ProtocolManager)
+        plugin_mgr: PluginManager = self.locator.get_manager(PluginManager)
 
         protocol_vo = protocol_mgr.get_protocol(protocol_id, domain_id)
 
@@ -550,13 +551,13 @@ class NotificationService(BaseService):
             )
             try:
                 endpoint_info = plugin_mgr.initialize(plugin_info, domain_id)
-                plugin_metadata = plugin_mgr.init_plugin(options)
+                plugin_metadata = plugin_mgr.init_plugin(options, domain_id)
                 plugin_info["metadata"] = plugin_metadata
 
                 if version := endpoint_info.get("updated_version"):
                     plugin_info["version"] = version
 
-                protocol_mgr = self.locator.get_manager("ProtocolManager")
+                protocol_mgr = self.locator.get_manager(ProtocolManager)
                 protocol_mgr.update_protocol_by_vo(
                     {"plugin_info": plugin_info}, protocol_vo
                 )
@@ -572,20 +573,22 @@ class NotificationService(BaseService):
                 message,
                 options,
                 plugin_mgr,
+                domain_id
             )
 
         else:
             _LOGGER.info("[Notification] Protocol is disabled. skip notification")
 
     def _dispatch_notification(
-        self,
-        protocol_vo,
-        secret_data,
-        channel_data,
-        notification_type,
-        message,
-        options,
-        plugin_mgr,
+            self,
+            protocol_vo,
+            secret_data,
+            channel_data,
+            notification_type,
+            message,
+            options,
+            plugin_mgr,
+            domain_id
     ):
         month, date = self.get_month_date()
         noti_usage_vo, usage_month, usage_date = self.get_notification_usage(
@@ -594,7 +597,7 @@ class NotificationService(BaseService):
 
         try:
             plugin_mgr.dispatch_notification(
-                secret_data, channel_data, notification_type, message, options
+                secret_data, channel_data, notification_type, message, options, domain_id
             )
             self.increment_usage(noti_usage_vo)
         except Exception as e:
@@ -685,7 +688,7 @@ class NotificationService(BaseService):
 
     @staticmethod
     def check_notification_level_for_dispatch(
-        notification_level, prj_channel_notification_level
+            notification_level, prj_channel_notification_level
     ):
         if notification_level == "ALL":
             return True

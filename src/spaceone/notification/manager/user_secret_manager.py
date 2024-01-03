@@ -13,6 +13,7 @@ class UserSecretManager(BaseManager):
         self.secret_connector: SpaceConnector = self.locator.get_connector(
             "SpaceConnector", service="secret"
         )
+        self.token_type = self.transaction.get_meta("authorization.token_type")
 
     def create_user_secret(self, params):
         return self.secret_connector.dispatch("UserSecret.create", params)
@@ -34,8 +35,15 @@ class UserSecretManager(BaseManager):
         )
 
     def get_secret_data(self, user_secret_id: str, domain_id: str) -> dict:
-        response = self.secret_connector.dispatch(
-            "UserSecret.get_data",
-            {"user_secret_id": user_secret_id, "domain_id": domain_id},
-        )
+        if self.token_type == "SYSTEM_TOKEN":
+            response = self.secret_connector.dispatch(
+                "UserSecret.get_data",
+                {"user_secret_id": user_secret_id, "domain_id": domain_id},
+                x_domain_id=domain_id,
+            )
+        else:
+            response = self.secret_connector.dispatch(
+                "UserSecret.get_data",
+                {"user_secret_id": user_secret_id, "domain_id": domain_id},
+            )
         return response["data"]

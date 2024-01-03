@@ -18,8 +18,9 @@ class PluginManager(BaseManager):
             "SpaceConnector", service="plugin"
         )
         self.noti_plugin_connector: NotificationPluginConnector = (
-            self.locator.get_connector("NotificationPluginConnector")
+            self.locator.get_connector(NotificationPluginConnector)
         )
+        self.token_type = self.transaction.get_meta("authorization.token_type")
 
     def initialize(self, plugin_info: dict, domain_id: str) -> dict:
         _LOGGER.debug(f"[initialize] plugin_info: {plugin_info}")
@@ -28,22 +29,28 @@ class PluginManager(BaseManager):
         upgrade_mode = plugin_info.get("upgrade_mode", "AUTO")
 
         if upgrade_mode == "AUTO":
+            params = {
+                "plugin_id": plugin_id,
+                "domain_id": domain_id,
+                "upgrade_mode": "AUTO"
+            }
+        else:
+            params = {
+                "plugin_id": plugin_id,
+                "domain_id": domain_id,
+                "version": plugin_info.get("version"),
+            }
+
+        if self.token_type == "SYSTEM_TOKEN":
             endpoint_response = self.plugin_connector.dispatch(
                 "Plugin.get_plugin_endpoint",
-                {
-                    "plugin_id": plugin_id,
-                    "domain_id": domain_id,
-                    "upgrade_mode": "AUTO",
-                },
+                params,
+                x_domain_id=domain_id
             )
         else:
             endpoint_response = self.plugin_connector.dispatch(
                 "Plugin.get_plugin_endpoint",
-                {
-                    "plugin_id": plugin_id,
-                    "domain_id": domain_id,
-                    "version": plugin_info.get("version"),
-                },
+                params
             )
 
         endpoint = endpoint_response["endpoint"]
@@ -52,8 +59,8 @@ class PluginManager(BaseManager):
 
         return endpoint_response
 
-    def init_plugin(self, options: dict) -> dict:
-        plugin_info = self.noti_plugin_connector.init(options)
+    def init_plugin(self, options: dict, domain_id: str = None) -> dict:
+        plugin_info = self.noti_plugin_connector.init(options, domain_id)
 
         _LOGGER.debug(f"[plugin_info] {plugin_info}")
         return plugin_info.get("metadata", {})
@@ -62,8 +69,8 @@ class PluginManager(BaseManager):
         self.noti_plugin_connector.verify(options, secret_data)
 
     def dispatch_notification(
-        self, secret_data, channel_data, notification_type, message, options
+            self, secret_data, channel_data, notification_type, message, options, domain_id
     ):
         return self.noti_plugin_connector.dispatch_notification(
-            secret_data, channel_data, notification_type, message, options
+            secret_data, channel_data, notification_type, message, options, domain_id
         )

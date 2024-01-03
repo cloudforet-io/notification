@@ -11,6 +11,7 @@ class NotificationPluginConnector(BaseConnector):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.noti_plugin_connector = None
+        self.token_type = self.transaction.get_meta("authorization.token_type")
 
     def initialize(self, endpoint: str):
         static_endpoint = self.config.get("endpoint")
@@ -22,10 +23,15 @@ class NotificationPluginConnector(BaseConnector):
             "SpaceConnector", endpoint=endpoint
         )
 
-    def init(self, options):
-        return self.noti_plugin_connector.dispatch(
-            "Protocol.init", {"options": options}
-        )
+    def init(self, options, domain_id=None):
+        if self.token_type == "SYSTEM_TOKEN":
+            return self.noti_plugin_connector.dispatch(
+                "Protocol.init", {"options": options}, x_domain_id=domain_id
+            )
+        else:
+            return self.noti_plugin_connector.dispatch(
+                "Protocol.init", {"options": options}
+            )
 
     def verify(self, options, secret_data):
         params = {"options": options, "secret_data": secret_data}
@@ -33,7 +39,7 @@ class NotificationPluginConnector(BaseConnector):
         self.noti_plugin_connector.dispatch("Protocol.verify", params)
 
     def dispatch_notification(
-        self, secret_data: dict, channel_data, notification_type, message, options={}
+            self, secret_data: dict, channel_data, notification_type, message, options={}, domain_id=None
     ):
         params = {
             "secret_data": secret_data,
@@ -43,4 +49,9 @@ class NotificationPluginConnector(BaseConnector):
             "options": options,
         }
 
-        return self.noti_plugin_connector.dispatch("Notification.dispatch", params)
+        if self.token_type == "SYSTEM_TOKEN":
+            return self.noti_plugin_connector.dispatch(
+                "Notification.dispatch", params, x_domain_id=domain_id
+            )
+        else:
+            return self.noti_plugin_connector.dispatch("Notification.dispatch", params)

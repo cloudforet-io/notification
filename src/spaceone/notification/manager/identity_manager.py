@@ -23,28 +23,41 @@ class IdentityManager(BaseManager):
         self.identity_connector: SpaceConnector = self.locator.get_connector(
             "SpaceConnector", service="identity"
         )
+        self.token_type = self.transaction.get_meta("authorization.token_type")
 
     def get_resource(self, resource_id: str, resource_type: str, domain_id: str):
         get_method = _GET_RESOURCE_METHODS[resource_type]
-        return self.identity_connector.dispatch(
-            get_method["dispatch_method"],
-            {get_method["key"]: resource_id},
-            x_domain_id=domain_id,
-        )
+        if self.token_type == "SYSTEM_TOKEN":
+            return self.identity_connector.dispatch(
+                get_method["dispatch_method"],
+                {get_method["key"]: resource_id},
+                x_domain_id=domain_id,
+            )
+        else:
+            return self.identity_connector.dispatch(
+                get_method["dispatch_method"], {get_method["key"]: resource_id}
+            )
 
     def get_user_profile(self):
         return self.identity_connector.dispatch("UserProfile.get", {})
 
     def get_domain_info(self, domain_id: str) -> dict:
-        token = config.get_global("TOKEN")
-        return self.identity_connector.dispatch(
-            "Domain.get", {}, token=token, x_domain_id=domain_id
-        )
+        if self.token_type == "SYSTEM_TOKEN":
+            return self.identity_connector.dispatch(
+                "Domain.get", {}, x_domain_id=domain_id
+            )
+        else:
+            return self.identity_connector.dispatch("Domain.get", {})
 
-    def get_all_users_in_domain(self):
+    def get_all_users_in_domain(self, domain_id: str) -> list:
         query = {
             "state": "ENABLED",
         }
 
-        response = self.identity_connector.dispatch("User.list", query)
+        if self.token_type == "SYSTEM_TOKEN":
+            response = self.identity_connector.dispatch(
+                "User.list", query, x_domain_id=domain_id
+            )
+        else:
+            response = self.identity_connector.dispatch("User.list", query)
         return response.get("results", [])
