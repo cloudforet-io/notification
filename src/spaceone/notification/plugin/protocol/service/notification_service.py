@@ -1,15 +1,19 @@
 import logging
 from spaceone.core.service import BaseService, transaction, convert_model
-from spaceone.notification.plugin.protocol.model.notification_request import NotificationDispatchRequest
+from spaceone.notification.plugin.protocol.model.notification_request import (
+    NotificationDispatchRequest,
+)
 
 _LOGGER = logging.getLogger(__name__)
 
 
 class NotificationService(BaseService):
-    @transaction
+    resource = "Notification"
+
+    @transaction()
     @convert_model
     def dispatch(self, params: NotificationDispatchRequest) -> None:
-        """ dispatch notification
+        """dispatch notification
 
         Args:
             params (NotificationDispatchRequest): {
@@ -24,5 +28,5 @@ class NotificationService(BaseService):
             None
         """
 
-        func = self.get_plugin_method('dispatch')
+        func = self.get_plugin_method("dispatch")
         func(params.dict())

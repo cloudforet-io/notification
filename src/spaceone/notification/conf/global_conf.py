@@ -49,6 +49,7 @@ LOG = {
         "masking": {
             "rules": {
                 "UserChannel.create": ["data"],
+                "Notification.create": ["metadata.token", "token"],
             }
         }
     }

@@ -30,12 +30,12 @@ class UserSecretManager(BaseManager):
             "UserSecret.delete", {"user_secret_id": user_secret_id}
         )
 
-    def list_secrets(self, query, domain_id):
+    def list_user_secrets(self, query, domain_id):
         return self.secret_connector.dispatch(
             "UserSecret.list", {"query": query, "domain_id": domain_id}
         )
 
-    def get_secret_data(self, user_secret_id: str, domain_id: str) -> dict:
+    def get_user_secret_data(self, user_secret_id: str, domain_id: str) -> dict:
         if self.token_type == "SYSTEM_TOKEN":
             response = self.secret_connector.dispatch(
                 "UserSecret.get_data",
