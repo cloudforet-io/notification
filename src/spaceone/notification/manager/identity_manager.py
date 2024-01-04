@@ -1,8 +1,8 @@
 import logging
 
-from spaceone.core import config
 from spaceone.core.connector.space_connector import SpaceConnector
 from spaceone.core.manager import BaseManager
+from spaceone.core.auth.jwt.jwt_util import JWTUtil
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -20,10 +20,11 @@ _GET_RESOURCE_METHODS = {
 class IdentityManager(BaseManager):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        token = self.transaction.get_meta("token")
+        self.token_type = JWTUtil.get_value_from_token(token, "typ")
         self.identity_connector: SpaceConnector = self.locator.get_connector(
             "SpaceConnector", service="identity"
         )
-        self.token_type = self.transaction.get_meta("authorization.token_type")
 
     def get_resource(self, resource_id: str, resource_type: str, domain_id: str):
         get_method = _GET_RESOURCE_METHODS[resource_type]

@@ -2,7 +2,7 @@ import logging
 
 from spaceone.core.manager import BaseManager
 from spaceone.core.connector.space_connector import SpaceConnector
-from spaceone.notification.error import *
+from spaceone.core.auth.jwt.jwt_util import JWTUtil
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -10,10 +10,11 @@ _LOGGER = logging.getLogger(__name__)
 class UserSecretManager(BaseManager):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        token = self.transaction.get_meta("token")
+        self.token_type = JWTUtil.get_value_from_token(token, "typ")
         self.secret_connector: SpaceConnector = self.locator.get_connector(
             "SpaceConnector", service="secret"
         )
-        self.token_type = self.transaction.get_meta("authorization.token_type")
 
     def create_user_secret(self, params):
         return self.secret_connector.dispatch("UserSecret.create", params)
