@@ -2,6 +2,7 @@ import logging
 
 from spaceone.core.connector import BaseConnector
 from spaceone.core.connector.space_connector import SpaceConnector
+from spaceone.core.auth.jwt.jwt_util import JWTUtil
 
 __all__ = ["NotificationPluginConnector"]
 _LOGGER = logging.getLogger(__name__)
@@ -10,8 +11,9 @@ _LOGGER = logging.getLogger(__name__)
 class NotificationPluginConnector(BaseConnector):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        token = self.transaction.get_meta("token")
+        self.token_type = JWTUtil.get_value_from_token(token, "typ")
         self.noti_plugin_connector = None
-        self.token_type = self.transaction.get_meta("authorization.token_type")
 
     def initialize(self, endpoint: str):
         static_endpoint = self.config.get("endpoint")
