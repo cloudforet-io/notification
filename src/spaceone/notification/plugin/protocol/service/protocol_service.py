@@ -1,18 +1,22 @@
 import logging
 from typing import Generator, Union
 from spaceone.core.service import BaseService, transaction, convert_model
-from spaceone.notification.plugin.protocol.model.protocol_request import ProtocolInitRequest, ProtocolVerifyRequest
+from spaceone.notification.plugin.protocol.model.protocol_request import (
+    ProtocolInitRequest,
+    ProtocolVerifyRequest,
+)
 from spaceone.notification.plugin.protocol.model.protocol_response import PluginResponse
 
 _LOGGER = logging.getLogger(__name__)
 
 
 class ProtocolService(BaseService):
+    resource = "Protocol"
 
-    @transaction
+    @transaction()
     @convert_model
     def init(self, params: ProtocolInitRequest) -> Union[dict, PluginResponse]:
-        """ init plugin by options
+        """init plugin by options
 
         Args:
             params (ProtocolInitRequest): {
@@ -24,14 +28,14 @@ class ProtocolService(BaseService):
             PluginResponse:
         """
 
-        func = self.get_plugin_method('init')
+        func = self.get_plugin_method("init")
         response = func(params.dict())
         return PluginResponse(**response)
 
-    @transaction
+    @transaction()
     @convert_model
     def verify(self, params: ProtocolVerifyRequest) -> None:
-        """ Verifying protocol plugin
+        """Verifying protocol plugin
 
         Args:
             params (ProtocolVerifyRequest): {
@@ -44,5 +48,5 @@ class ProtocolService(BaseService):
             None
         """
 
-        func = self.get_plugin_method('verify')
+        func = self.get_plugin_method("verify")
         func(params.dict())

@@ -100,7 +100,7 @@ class UserChannelService(BaseService):
             )
 
             params.update(
-                {"secret_id": user_channel_secret["user_secret_id"], "data": {}}
+                {"user_secret_id": user_channel_secret["user_secret_id"], "data": {}}
             )
 
         return self.user_channel_mgr.create_user_channel(params)
@@ -135,9 +135,9 @@ class UserChannelService(BaseService):
             user_channel_id, user_id, domain_id
         )
 
-        if "data" in params and user_channel_vo.secret_id:
+        if "data" in params and user_channel_vo.user_secret_id:
             secret_params = {
-                "user_secret_id": user_channel_vo.secret_id,
+                "user_secret_id": user_channel_vo.user_secret_id,
                 "data": params["data"],
             }
 
@@ -233,8 +233,8 @@ class UserChannelService(BaseService):
             user_channel_id, user_id, domain_id
         )
 
-        if secret_id := user_channel_vo.secret_id:
-            self.user_secret_mgr.delete_user_secret(secret_id)
+        if user_secret_id := user_channel_vo.user_secret_id:
+            self.user_secret_mgr.delete_user_secret(user_secret_id)
 
         self.user_channel_mgr.delete_user_channel_by_vo(user_channel_vo)
 
@@ -318,7 +318,7 @@ class UserChannelService(BaseService):
             "user_channel_id",
             "name",
             "state",
-            "secret_id",
+            "user_secret_id",
             "protocol_id",
             "user_id",
             "domain_id",
@@ -334,7 +334,7 @@ class UserChannelService(BaseService):
                 'user_channel_id': 'str',
                 'name': 'str',
                 'state': 'str',
-                'secret_id': 'str',
+                'user_secret_id': 'str',
                 'protocol_id': 'str',
                 'user_id': 'str',                               # injected from auth
                 'domain_id': 'str',                             # injected from auth

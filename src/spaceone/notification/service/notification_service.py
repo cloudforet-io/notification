@@ -78,7 +78,7 @@ class NotificationService(BaseService):
 
     def dispatch_domain(self, params):
         domain_id = params["resource_id"]
-        _LOGGER.debug(f'[Dispatch Domain] Domain ID: {domain_id}')
+        _LOGGER.debug(f"[Dispatch Domain] Domain ID: {domain_id}")
 
         identity_mgr: IdentityManager = self.locator.get_manager(IdentityManager)
         users = identity_mgr.get_all_users_in_domain(domain_id)
@@ -98,7 +98,7 @@ class NotificationService(BaseService):
 
     def dispatch_project_channel(self, params: dict):
         project_id = params["resource_id"]
-        _LOGGER.debug(f'[Dispatch Project Channel] Project ID: {project_id}')
+        _LOGGER.debug(f"[Dispatch Project Channel] Project ID: {project_id}")
         protocol_mgr: ProtocolManager = self.locator.get_manager(ProtocolManager)
         project_ch_mgr: ProjectChannelManager = self.locator.get_manager(
             ProjectChannelManager
@@ -144,9 +144,9 @@ class NotificationService(BaseService):
                 )
 
                 if (
-                        dispatch_subscribe
-                        and dispatch_schedule
-                        and dispatch_notification_level
+                    dispatch_subscribe
+                    and dispatch_schedule
+                    and dispatch_notification_level
                 ):
                     _LOGGER.info(
                         f"[Notification] Dispatch Notification to project: {project_id}"
@@ -193,7 +193,7 @@ class NotificationService(BaseService):
 
     def dispatch_user_channel(self, params):
         user_id = params["resource_id"]
-        _LOGGER.debug(f'[Dispatch User Channel] User ID: {user_id}')
+        _LOGGER.debug(f"[Dispatch User Channel] User ID: {user_id}")
 
         protocol_mgr: ProtocolManager = self.locator.get_manager(ProtocolManager)
         user_ch_mgr: UserChannelManager = self.locator.get_manager(UserChannelManager)
@@ -248,9 +248,7 @@ class NotificationService(BaseService):
                         domain_id,
                     )
                 else:
-                    _LOGGER.info(
-                        f"[Notification] Skip Notification to user: {user_id}"
-                    )
+                    _LOGGER.info(f"[Notification] Skip Notification to user: {user_id}")
             else:
                 _LOGGER.info(
                     f"[Notification] User Channel is disabled: {user_ch_vo.user_channel_id}"
@@ -420,13 +418,13 @@ class NotificationService(BaseService):
         return self.notification_mgr.stat_notifications(query)
 
     def push_queue(
-            self,
-            protocol_id,
-            channel_data,
-            secret_data,
-            notification_type,
-            message,
-            domain_id,
+        self,
+        protocol_id,
+        channel_data,
+        secret_data,
+        notification_type,
+        message,
+        domain_id,
     ):
         task = {
             "name": "dispatch_notification",
@@ -497,7 +495,7 @@ class NotificationService(BaseService):
         return channel_data
 
     def get_user_channel_data(
-            self, user_channel_vo: UserChannel, protocol_vo: Protocol, domain_id: str
+        self, user_channel_vo: UserChannel, protocol_vo: Protocol, domain_id: str
     ):
         user_secret_mgr: UserSecretManager = self.locator.get_manager(
             "UserSecretManager"
@@ -510,8 +508,8 @@ class NotificationService(BaseService):
         if plugin_metadata.get("data_type") == "PLAIN_TEXT":
             channel_data = user_channel_vo.data
         elif plugin_metadata.get("data_type") == "SECRET":
-            channel_data = user_secret_mgr.get_secret_data(
-                user_channel_vo.secret_id, domain_id
+            channel_data = user_secret_mgr.get_user_secret_data(
+                user_channel_vo.user_secret_id, domain_id
             )
 
         return channel_data
@@ -528,13 +526,13 @@ class NotificationService(BaseService):
         return secret_data
 
     def dispatch_notification(
-            self,
-            protocol_id,
-            channel_data,
-            secret_data,
-            notification_type,
-            message,
-            domain_id,
+        self,
+        protocol_id,
+        channel_data,
+        secret_data,
+        notification_type,
+        message,
+        domain_id,
     ):
         protocol_mgr: ProtocolManager = self.locator.get_manager(ProtocolManager)
         plugin_mgr: PluginManager = self.locator.get_manager(PluginManager)
@@ -573,22 +571,22 @@ class NotificationService(BaseService):
                 message,
                 options,
                 plugin_mgr,
-                domain_id
+                domain_id,
             )
 
         else:
             _LOGGER.info("[Notification] Protocol is disabled. skip notification")
 
     def _dispatch_notification(
-            self,
-            protocol_vo,
-            secret_data,
-            channel_data,
-            notification_type,
-            message,
-            options,
-            plugin_mgr,
-            domain_id
+        self,
+        protocol_vo,
+        secret_data,
+        channel_data,
+        notification_type,
+        message,
+        options,
+        plugin_mgr,
+        domain_id,
     ):
         month, date = self.get_month_date()
         noti_usage_vo, usage_month, usage_date = self.get_notification_usage(
@@ -597,7 +595,12 @@ class NotificationService(BaseService):
 
         try:
             plugin_mgr.dispatch_notification(
-                secret_data, channel_data, notification_type, message, options, domain_id
+                secret_data,
+                channel_data,
+                notification_type,
+                message,
+                options,
+                domain_id,
             )
             self.increment_usage(noti_usage_vo)
         except Exception as e:
@@ -688,7 +691,7 @@ class NotificationService(BaseService):
 
     @staticmethod
     def check_notification_level_for_dispatch(
-            notification_level, prj_channel_notification_level
+        notification_level, prj_channel_notification_level
     ):
         if notification_level == "ALL":
             return True
