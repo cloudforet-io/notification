@@ -1,7 +1,3 @@
 spaceone-api
-mongoengine
 langcodes
-redis
 fakeredis
-mongomock
-boto3
