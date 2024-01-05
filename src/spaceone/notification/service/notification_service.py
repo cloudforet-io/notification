@@ -34,9 +34,7 @@ class NotificationService(BaseService):
             "NotificationManager"
         )
 
-    @transaction(
-        permission="notification:Notification.write", role_types=["DOMAIN_ADMIN"]
-    )
+    @transaction()
     @check_required(["resource_type", "resource_id", "topic", "message", "domain_id"])
     def create(self, params):
         """Create Notification
@@ -257,9 +255,7 @@ class NotificationService(BaseService):
         params.update({"user_id": user_id})
         self.notification_mgr.create_notification(params)
 
-    @transaction(
-        permission="notification:Notification.write", role_types=["DOMAIN_ADMIN"]
-    )
+    @transaction()
     @check_required(["protocol_id", "data", "message", "domain_id"])
     def push(self, params):
         """Push notification
