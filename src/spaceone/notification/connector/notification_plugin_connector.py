@@ -2,7 +2,6 @@ import logging
 
 from spaceone.core.connector import BaseConnector
 from spaceone.core.connector.space_connector import SpaceConnector
-from spaceone.core.auth.jwt.jwt_util import JWTUtil
 
 __all__ = ["NotificationPluginConnector"]
 _LOGGER = logging.getLogger(__name__)
@@ -11,8 +10,6 @@ _LOGGER = logging.getLogger(__name__)
 class NotificationPluginConnector(BaseConnector):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        token = self.transaction.get_meta("token")
-        self.token_type = JWTUtil.get_value_from_token(token, "typ")
         self.noti_plugin_connector = None
 
     def initialize(self, endpoint: str):
@@ -22,18 +19,13 @@ class NotificationPluginConnector(BaseConnector):
             endpoint = static_endpoint
 
         self.noti_plugin_connector: SpaceConnector = self.locator.get_connector(
-            "SpaceConnector", endpoint=endpoint
+            "SpaceConnector", endpoint=endpoint, token="NO_TOKEN"
         )
 
     def init(self, options, domain_id=None):
-        if self.token_type == "SYSTEM_TOKEN":
-            return self.noti_plugin_connector.dispatch(
-                "Protocol.init", {"options": options}, x_domain_id=domain_id
-            )
-        else:
-            return self.noti_plugin_connector.dispatch(
-                "Protocol.init", {"options": options}
-            )
+        return self.noti_plugin_connector.dispatch(
+            "Protocol.init", {"options": options}
+        )
 
     def verify(self, options, secret_data):
         params = {"options": options, "secret_data": secret_data}
@@ -51,9 +43,4 @@ class NotificationPluginConnector(BaseConnector):
             "options": options,
         }
 
-        if self.token_type == "SYSTEM_TOKEN":
-            return self.noti_plugin_connector.dispatch(
-                "Notification.dispatch", params, x_domain_id=domain_id
-            )
-        else:
-            return self.noti_plugin_connector.dispatch("Notification.dispatch", params)
+        return self.noti_plugin_connector.dispatch("Notification.dispatch", params)
