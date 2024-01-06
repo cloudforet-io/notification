@@ -17,7 +17,7 @@ class UserChannel(MongoModel):
     is_scheduled = BooleanField(default=False)
     schedule = EmbeddedDocumentField(Schedule, default=None, null=True)
     tags = DictField()
-    secret_id = StringField(max_length=255)
+    user_secret_id = StringField(max_length=255)
     domain_id = StringField(max_length=255)
     created_at = DateTimeField(auto_now_add=True)
 
@@ -41,13 +41,8 @@ class UserChannel(MongoModel):
         "ordering": ["name"],
         "indexes": [
             # 'user_channel_id',
-            "user_id",
             "protocol_id",
             "state",
-            "is_subscribe",
-            "notification_level",
-            "is_scheduled",
-            "secret_id",
-            "domain_id",
+            "tags",
         ],
     }

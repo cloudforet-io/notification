@@ -7,8 +7,6 @@ class ProjectChannel(MongoModel):
     project_channel_id = StringField(
         max_length=40, generate_id="project-ch", unique=True
     )
-    project_id = StringField(max_length=255)
-    protocol_id = StringField(max_length=40)
     name = StringField(max_length=255)
     state = StringField(
         max_length=20, default="ENABLED", choices=("ENABLED", "DISABLED")
@@ -23,6 +21,9 @@ class ProjectChannel(MongoModel):
     schedule = EmbeddedDocumentField(Schedule, default=None, null=True)
     tags = DictField()
     secret_id = StringField(max_length=255)
+    protocol_id = StringField(max_length=40)
+    project_id = StringField(max_length=255)
+    workspace_id = StringField(default=None, null=True, max_length=40)
     domain_id = StringField(max_length=255)
     created_at = DateTimeField(auto_now_add=True)
 
@@ -46,13 +47,10 @@ class ProjectChannel(MongoModel):
         ],
         "ordering": ["name"],
         "indexes": [
-            "project_id",
+            # 'project_channel_id',
             "protocol_id",
             "state",
-            "is_subscribe",
-            "notification_level",
-            "is_scheduled",
-            "secret_id",
-            "domain_id",
+            "tags",
+            "workspace_id",
         ],
     }
