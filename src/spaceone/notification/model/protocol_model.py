@@ -42,8 +42,8 @@ class Protocol(MongoModel):
         ],
         "ordering": ["name"],
         "indexes": [
-            # 'protocol_id',
             "state",
-            "tags",
+            "protocol_type",
+            "domain_id",
         ],
     }
