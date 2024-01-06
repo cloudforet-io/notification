@@ -1,5 +1,6 @@
 import logging
 
+from spaceone.core import config
 from spaceone.core.manager import BaseManager
 from spaceone.core.connector.space_connector import SpaceConnector
 
@@ -30,7 +31,7 @@ class PluginManager(BaseManager):
             params = {
                 "plugin_id": plugin_id,
                 "domain_id": domain_id,
-                "upgrade_mode": "AUTO"
+                "upgrade_mode": "AUTO",
             }
         else:
             params = {
@@ -39,7 +40,7 @@ class PluginManager(BaseManager):
                 "version": plugin_info.get("version"),
             }
 
-        system_token = self.transaction.get_meta("token")
+        system_token = config.get_global("TOKEN")
         endpoint_response = self.plugin_connector.dispatch(
             "Plugin.get_plugin_endpoint",
             params,
@@ -62,7 +63,7 @@ class PluginManager(BaseManager):
         self.noti_plugin_connector.verify(options, secret_data)
 
     def dispatch_notification(
-            self, secret_data, channel_data, notification_type, message, options, domain_id
+        self, secret_data, channel_data, notification_type, message, options, domain_id
     ):
         return self.noti_plugin_connector.dispatch_notification(
             secret_data, channel_data, notification_type, message, options, domain_id
