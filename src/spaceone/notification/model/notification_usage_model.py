@@ -11,23 +11,15 @@ class NotificationUsage(MongoModel):
     domain_id = StringField(max_length=255)
 
     meta = {
-        'updatable_fields': [
-            'count',
-            'fail_count'
+        "updatable_fields": ["count", "fail_count"],
+        "minimal_fields": [
+            "protocol_id",
+            "usage_date",
+            "usage_month",
+            "count",
+            "fail_count",
+            "domain_id",
         ],
-        'minimal_fields': [
-            'protocol_id',
-            'usage_date',
-            'usage_month',
-            'count',
-            'fail_count',
-            'domain_id',
-        ],
-        'ordering': ['protocol_id', 'usage_month', 'usage_date'],
-        'indexes': [
-            'protocol_id',
-            'usage_date',
-            'usage_month',
-            'domain_id'
-        ]
+        "ordering": ["protocol_id", "usage_month", "usage_date"],
+        "indexes": ["protocol_id", "usage_date", "usage_month", "domain_id"],
     }

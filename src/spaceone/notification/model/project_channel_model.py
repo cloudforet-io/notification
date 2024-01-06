@@ -47,10 +47,13 @@ class ProjectChannel(MongoModel):
         ],
         "ordering": ["name"],
         "indexes": [
-            # 'project_channel_id',
-            "protocol_id",
             "state",
-            "tags",
+            "is_subscribe",
+            "is_scheduled",
+            "secret_id",
+            "protocol_id",
+            "project_id",
             "workspace_id",
+            "domain_id",
         ],
     }
