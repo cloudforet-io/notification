@@ -9,17 +9,23 @@ class PluginInfo(EmbeddedDocument):
     metadata = DictField(default={})
     secret_id = StringField(max_length=40)
     schema = StringField(max_length=255)
-    upgrade_mode = StringField(max_length=255, choices=('AUTO', 'MANUAL'), default='AUTO')
+    upgrade_mode = StringField(
+        max_length=255, choices=("AUTO", "MANUAL"), default="AUTO"
+    )
 
     def to_dict(self):
         return dict(self.to_mongo())
 
 
 class Protocol(MongoModel):
-    protocol_id = StringField(max_length=40, generate_id='protocol', unique=True)
-    name = StringField(max_length=255, unique_with=['domain_id'])
-    state = StringField(max_length=20, default='ENABLED', choices=('ENABLED', 'DISABLED'))
-    protocol_type = StringField(max_length=40, default='EXTERNAL', choices=('EXTERNAL', 'INTERNAL'))
+    protocol_id = StringField(max_length=40, generate_id="protocol", unique=True)
+    name = StringField(max_length=255, unique_with=["domain_id"])
+    state = StringField(
+        max_length=20, default="ENABLED", choices=("ENABLED", "DISABLED")
+    )
+    protocol_type = StringField(
+        max_length=40, default="EXTERNAL", choices=("EXTERNAL", "INTERNAL")
+    )
     resource_type = StringField(max_length=40, null=True, default=None)
     capability = DictField()
     plugin_info = EmbeddedDocumentField(PluginInfo, default={})
@@ -28,21 +34,18 @@ class Protocol(MongoModel):
     created_at = DateTimeField(auto_now_add=True)
 
     meta = {
-        'updatable_fields': [
-            'name',
-            'state',
-            'plugin_info',
-            'tags'
+        "updatable_fields": ["name", "state", "plugin_info", "tags"],
+        "minimal_fields": [
+            "protocol_id",
+            "name",
+            "state",
         ],
-        'minimal_fields': [
-            'protocol_id',
-            'name',
-            'state',
-        ],
-        'ordering': ['name'],
-        'indexes': [
+        "ordering": ["name"],
+        "indexes": [
             # 'protocol_id',
-            'state',
-            'tags'
-        ]
+            "state",
+            "protocol_type",
+            "resource_type",
+            "domain_id",
+        ],
     }
