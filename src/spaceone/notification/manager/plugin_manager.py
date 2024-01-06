@@ -2,7 +2,6 @@ import logging
 
 from spaceone.core.manager import BaseManager
 from spaceone.core.connector.space_connector import SpaceConnector
-from spaceone.core.auth.jwt.jwt_util import JWTUtil
 
 from spaceone.notification.connector.notification_plugin_connector import (
     NotificationPluginConnector,
@@ -14,8 +13,6 @@ _LOGGER = logging.getLogger(__name__)
 class PluginManager(BaseManager):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        token = self.transaction.get_meta("token")
-        self.token_type = JWTUtil.get_value_from_token(token, "typ")
         self.plugin_connector: SpaceConnector = self.locator.get_connector(
             "SpaceConnector", service="plugin"
         )
@@ -42,17 +39,12 @@ class PluginManager(BaseManager):
                 "version": plugin_info.get("version"),
             }
 
-        if self.token_type == "SYSTEM_TOKEN":
-            endpoint_response = self.plugin_connector.dispatch(
-                "Plugin.get_plugin_endpoint",
-                params,
-                x_domain_id=domain_id
-            )
-        else:
-            endpoint_response = self.plugin_connector.dispatch(
-                "Plugin.get_plugin_endpoint",
-                params
-            )
+        system_token = self.transaction.get_meta("token")
+        endpoint_response = self.plugin_connector.dispatch(
+            "Plugin.get_plugin_endpoint",
+            params,
+            token=system_token,
+        )
 
         endpoint = endpoint_response["endpoint"]
         _LOGGER.debug(f"[init_plugin] endpoint: {endpoint}")
