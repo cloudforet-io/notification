@@ -92,7 +92,7 @@ class ProjectChannelService(BaseService):
             new_secret_parameters = {
                 "name": utils.generate_id("project-ch", 4),
                 "data": data,
-                "resource_group": "WORKSPACE",
+                "resource_group": "PROJECT",
                 "project_id": project_id,
                 "workspace_id": workspace_id,
             }
