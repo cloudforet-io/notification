@@ -61,9 +61,17 @@ class NotificationService(BaseService):
         message = params["message"]
 
         domain_info = identity_mgr.get_domain_info(domain_id)
+        if domain_info["state"] != "ENABLED":
+            _LOGGER.error(f"[Notification] Domain is disabled: {domain_id}")
+            return None
+
         message["domain_name"] = self.get_domain_name(domain_info)
 
-        identity_mgr.get_resource(resource_id, resource_type, domain_id)
+        try:
+            identity_mgr.get_resource(resource_id, resource_type, domain_id)
+        except Exception as e:
+            _LOGGER.error(f"[Notification] Failed to get resource: {e}")
+            return None
 
         if resource_type == "identity.Domain":
             self.dispatch_domain(params)
