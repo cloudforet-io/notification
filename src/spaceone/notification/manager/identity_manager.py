@@ -1,5 +1,6 @@
 import logging
 
+from spaceone.core import config
 from spaceone.core.connector.space_connector import SpaceConnector
 from spaceone.core.manager import BaseManager
 from spaceone.core.auth.jwt.jwt_util import JWTUtil
@@ -43,12 +44,10 @@ class IdentityManager(BaseManager):
         return self.identity_connector.dispatch("UserProfile.get", {})
 
     def get_domain_info(self, domain_id: str) -> dict:
-        if self.token_type == "SYSTEM_TOKEN":
-            return self.identity_connector.dispatch(
-                "Domain.get", {}, x_domain_id=domain_id
-            )
-        else:
-            return self.identity_connector.dispatch("Domain.get", {})
+        system_token = config.get_global("TOKEN")
+        return self.identity_connector.dispatch(
+            "Domain.get", {"domain_id": domain_id}, token=system_token
+        )
 
     def get_all_users_in_domain(self, domain_id: str) -> list:
         query = {
