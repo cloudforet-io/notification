@@ -109,6 +109,7 @@ class NotificationService(BaseService):
         project_ch_mgr: ProjectChannelManager = self.locator.get_manager(
             ProjectChannelManager
         )
+        identity_mgr: IdentityManager = self.locator.get_manager(IdentityManager)
 
         domain_id = params["domain_id"]
         topic = params["topic"]
@@ -160,13 +161,34 @@ class NotificationService(BaseService):
 
                     if protocol_vo.protocol_type == "INTERNAL":
                         internal_project_channel_data = prj_ch_vo.data
+                        users = []
                         for user_id in internal_project_channel_data.get("users", []):
+                            if user_id == "*":
+                                project_info = identity_mgr.get_project(
+                                    project_id, domain_id
+                                )
+                                project_type = project_info["project_type"]
+                                project_users = project_info.get("users", [])
+                                if project_type == "PRIVATE":
+                                    users += project_users
+                                else:
+                                    response = identity_mgr.get_workspace_users(
+                                        project_id, domain_id
+                                    )
+                                    workspace_users = response.get("results", [])
+                                    users += workspace_users
+                            else:
+                                users.append(user_id)
+
+                        users = list(set(users))
+                        for user_id in users:
                             params.update(
                                 {
                                     "resource_type": "identity.User",
                                     "resource_id": user_id,
                                 }
                             )
+
                             _LOGGER.debug(
                                 f"[Forward to User Channel] User ID: {user_id}"
                             )
