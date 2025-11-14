@@ -17,7 +17,7 @@ import os
 from setuptools import setup, find_packages
 
 setup(
-    name="spaceone-notification",
+    name="spaceone_notification",
     version=os.environ.get("PACKAGE_VERSION"),
     description="SpaceONE notification service",
     long_description="",
